@@ -74,6 +74,10 @@ class TestMProfiler(unittest.TestCase):
         self.assertLessEqual(len(snap.traces), n)
         self.assertGreaterEqual(len(snap.traces[0].traceback), 2)
 
+        stats = snap.statistics("traceback")
+        self.assertGreaterEqual(len(stats), 1)
+        self.assertGreaterEqual(stats[0].count, len(snap.traces))
+        self.assertGreaterEqual(stats[0].size, sum(t.size for t in snap.traces))
 
 if __name__ == '__main__':
     unittest.main()

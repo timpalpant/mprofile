@@ -3,6 +3,7 @@ from collections import Sequence, Iterable
 import fnmatch
 from functools import total_ordering
 import linecache
+import math
 import os.path
 
 # Import types and functions implemented in C
@@ -363,11 +364,12 @@ class Snapshot(object):
     Snapshot of traces of memory blocks allocated by Python.
     """
 
-    def __init__(self, traces, traceback_limit):
+    def __init__(self, traces, traceback_limit, sample_rate=0):
         # traces is a tuple of trace tuples: see _Traces constructor for
         # the exact format
         self.traces = _Traces(traces)
         self.traceback_limit = traceback_limit
+        self.sample_rate = sample_rate
 
     def _filter_trace(self, include_filters, exclude_filters, trace):
         traceback = trace[1]
@@ -404,7 +406,7 @@ class Snapshot(object):
                                                 trace)]
         else:
             new_traces = self.traces._traces[:]
-        return Snapshot(new_traces, self.traceback_limit)
+        return Snapshot(new_traces, self.traceback_limit, self.sample_rate)
 
     def _group_by(self, key_type, cumulative):
         if key_type not in ('traceback', 'filename', 'lineno'):
@@ -456,7 +458,23 @@ class Snapshot(object):
                         stat.count += 1
                     except KeyError:
                         stats[traceback] = Statistic(traceback, size, 1)
+        return self._scale_heap_samples(stats)
+
+    def _scale_heap_samples(self, stats):
+        for tb, stat in stats.items():
+            stats[tb] = self._scale_heap_sample(stat)
         return stats
+
+    def _scale_heap_sample(self, stat):
+        if stat.count == 0 or stat.size == 0:
+            return stat
+        if self.sample_rate <= 1:
+            return stat
+        avg_size = float(stat.size) / stat.count
+        scale = 1.0 / (1.0 - math.exp(-avg_size / self.sample_rate))
+        stat.size = int(scale * stat.size)
+        stat.count = int(scale * stat.count)
+        return stat
 
     def statistics(self, key_type, cumulative=False):
         """
@@ -490,4 +508,5 @@ def take_snapshot():
                            "allocations to take a snapshot")
     traces = _get_traces()
     traceback_limit = get_traceback_limit()
-    return Snapshot(traces, traceback_limit)
+    sample_rate = get_sample_rate()
+    return Snapshot(traces, traceback_limit, sample_rate)

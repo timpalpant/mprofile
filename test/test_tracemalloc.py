@@ -313,12 +313,15 @@ class TestSnapshot(unittest.TestCase):
                                              return_value=True))
             stack.enter_context(patch.object(mprofile, 'get_traceback_limit',
                                              return_value=5))
+            stack.enter_context(patch.object(mprofile, 'get_sample_rate',
+                                             return_value=1))
             stack.enter_context(patch.object(mprofile, '_get_traces',
                                              return_value=raw_traces))
 
             snapshot = mprofile.take_snapshot()
             self.assertEqual(snapshot.traceback_limit, 5)
             self.assertEqual(len(snapshot.traces), 1)
+            self.assertEqual(snapshot.sample_rate, 1)
             trace = snapshot.traces[0]
             self.assertEqual(trace.size, 5)
             self.assertEqual(len(trace.traceback), 1)
