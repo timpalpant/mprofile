@@ -36,11 +36,14 @@ bool StartProfilerWithParams(uint64_t max_frames, uint64_t sample_rate) {
   return true;
 }
 
-PyObject *StartProfiler(PyObject *self, PyObject *args) {
-  // NB: PyArg_ParseTuple raises a Py exception on error.
+PyObject *StartProfiler(PyObject *self, PyObject *args, PyObject *kwds) {
+  static const char *kwlist[] = {"max_frames", "sample_rate", nullptr};
   uint64_t max_frames = kMaxFramesToCapture;
   uint64_t sample_rate = 0;
-  if (!PyArg_ParseTuple(args, "|LL", &max_frames, &sample_rate)) {
+  // NB: PyArg_ParseTupleAndKeywords raises a Py exception on error.
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|LL",
+                                   const_cast<char **>(kwlist), &max_frames,
+                                   &sample_rate)) {
     return nullptr;
   }
 
@@ -208,7 +211,8 @@ bool MProfileInit(PyObject *self) {
 }
 
 PyMethodDef ProfilerMethods[] = {
-    {"start", StartProfiler, METH_VARARGS, "Start memory profiling."},
+    {"start", (PyCFunction)StartProfiler, METH_VARARGS | METH_KEYWORDS,
+     "Start memory profiling."},
     {"stop", StopProfiler, METH_VARARGS, "Stop memory profiling."},
     {"is_tracing", IsTracing, METH_VARARGS,
      "True/False if memory profiler is active."},

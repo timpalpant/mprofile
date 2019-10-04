@@ -55,7 +55,7 @@ class TestMProfiler(unittest.TestCase):
         t2.join()
 
     def test_profile_1frame(self):
-        mprofile.start(1)
+        mprofile.start(max_frames=1)
         alloc_obj = object()
         snap = mprofile.take_snapshot()
         mprofile.stop()
@@ -65,7 +65,7 @@ class TestMProfiler(unittest.TestCase):
 
     def test_profile_sampler(self):
         n = 100000
-        mprofile.start(128, 1024)
+        mprofile.start(sample_rate=1024)
         alloc_obj = [object() for _ in range(n)]
         snap = mprofile.take_snapshot()
         mprofile.stop()

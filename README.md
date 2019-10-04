@@ -15,7 +15,7 @@ A low-overhead sampling memory profiler for Python, derived from [heapprof](http
     ```python
     import mprofile
 
-    mprofile.start(128, 128 * 1024)
+    mprofile.start(sample_rate=128 * 1024)
     snap = mprofile.take_snapshot()
     ```
 
