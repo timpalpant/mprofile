@@ -87,25 +87,21 @@ Maximum resident set size (kbytes): 39328
 ## Developer notes
 
 Run the unit tests:
-
 ```
 bazel test --test_output=streamed //src:profiler_test
 ```
 
 Run the benchmarks:
-
 ```
 bazel test -c opt --test_output=streamed //src:profiler_bench
 ```
 
 Run the end-to-end (Python) tests:
-
 ```
 bazel test --config asan --test_output=streamed //test:*
 ```
 
 Run tests with ASAN and UBSAN:
-
 ```
 bazel test --config asan --test_output=streamed //src:* //test:*
 ```
