@@ -1,0 +1,20 @@
+# These are adapted from Envoy: https://github.com/envoyproxy/envoy/blob/master/.bazelrc
+
+# Common flags for sanitizers
+build:sanitizer --define tcmalloc=disabled
+build:sanitizer --linkopt -lasan
+build:sanitizer --linkopt -ldl
+build:sanitizer --build_tag_filters=-no_san
+build:sanitizer --test_tag_filters=-no_san
+
+# Basic ASAN/UBSAN that works for gcc
+build:asan --config=sanitizer
+build:asan --copt -fsanitize=address,undefined
+build:asan --linkopt -fsanitize=address,undefined
+build:asan --copt -fno-sanitize=vptr
+build:asan --linkopt -fno-sanitize=vptr
+build:asan --copt -DADDRESS_SANITIZER=1
+build:asan --copt -D__SANITIZE_ADDRESS__
+build:asan --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:check_initialization_order=true:strict_init_order=true:detect_odr_violation=1
+build:asan --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1
+build:asan --test_env=ASAN_SYMBOLIZER_PATH

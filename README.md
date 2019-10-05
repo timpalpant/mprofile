@@ -19,4 +19,9 @@ A low-overhead sampling memory profiler for Python, derived from [heapprof](http
     snap = mprofile.take_snapshot()
     ```
 
+See the [tracemalloc](https://docs.python.org/3/library/tracemalloc.html) for API documentation. The API and objects returned by mprofile are compatible.
 
+## Compatibility
+
+mprofile is compatible with Python >= 3.4.
+It can also be used with earlier versions of Python, but you must build CPython from source and apply the [pytracemalloc patches](https://pytracemalloc.readthedocs.io/install.html#manual-installation).
