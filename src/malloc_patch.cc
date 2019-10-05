@@ -45,6 +45,7 @@ void *WrappedMalloc(void *ctx, size_t size) {
   return ptr;
 }
 
+#if PY_VERSION_HEX >= 0x03050000
 void *WrappedCalloc(void *ctx, size_t nelem, size_t elsize) {
   ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
@@ -55,6 +56,7 @@ void *WrappedCalloc(void *ctx, size_t nelem, size_t elsize) {
   }
   return ptr;
 }
+#endif
 
 void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
   ReentrantScope scope;
