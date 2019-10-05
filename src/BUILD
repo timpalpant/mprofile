@@ -1,5 +1,5 @@
 COPTS = [
-    "-std=c++17",
+    "-std=c++11",
     "-Wall",
     "-Wshadow",
     "-fstrict-aliasing",

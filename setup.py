@@ -36,8 +36,8 @@ ext = Extension(
     depends=glob.glob("src/*.h"),
     include_dirs=[os.getcwd(), "src"],
     define_macros=[("PY_SSIZE_T_CLEAN", None)],
-    extra_compile_args=["-std=c++17"],
-    extra_link_args=["-std=c++17", "-static-libstdc++"],
+    extra_compile_args=["-std=c++11"],
+    extra_link_args=["-std=c++11", "-static-libstdc++"],
 )
 
 

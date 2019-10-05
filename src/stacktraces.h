@@ -17,6 +17,7 @@
 #define MPROFILE_SRC_STACKTRACES_H_
 
 #include <Python.h>
+#include <vector>
 
 #include "third_party/greg7mdp/parallel-hashmap/phmap.h"
 

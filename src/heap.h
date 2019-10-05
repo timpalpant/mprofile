@@ -5,6 +5,7 @@
 #define MPROFILE_SRC_HEAP_H_
 
 #include <atomic>
+#include <vector>
 
 #include "third_party/google/tcmalloc/sampler.h"
 #include "third_party/greg7mdp/parallel-hashmap/phmap.h"
