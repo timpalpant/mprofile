@@ -6,7 +6,7 @@ eval "$(pyenv init -)";
 
 for PYVERSION in $(pyenv versions --bare); do
   pyenv shell $PYVERSION
-  pip install setuptools wheel
+  pip install -U setuptools wheel
   python setup.py test
   # NB: This is not actually manylinux2010-compatible, but ABSL and c++11
   # have ABI requirements that won't compile on the manylinux2010 images.
