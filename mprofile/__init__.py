@@ -11,7 +11,7 @@ from mprofile._profiler import *
 from mprofile._profiler import _get_object_traceback, _get_traces
 
 # setup.py reads the version information from here to set package version
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 def _format_size(size, sign):
