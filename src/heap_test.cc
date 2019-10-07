@@ -14,10 +14,12 @@ TEST(HeapProfiler, HandleMalloc) {
   void *fake_ptr3 = reinterpret_cast<void *>(789);
 
   // GIL may be held but not required to be held.
-  Py_BEGIN_ALLOW_THREADS p.HandleMalloc(fake_ptr, 12, true);
+  Py_BEGIN_ALLOW_THREADS;
+  p.HandleMalloc(fake_ptr, 12, true);
   EXPECT_EQ(p.TotalMemoryTraced(), 12);
   EXPECT_EQ(p.PeakMemoryTraced(), 12);
-  Py_END_ALLOW_THREADS p.HandleMalloc(fake_ptr2, 6, false);
+  Py_END_ALLOW_THREADS;
+  p.HandleMalloc(fake_ptr2, 6, false);
   EXPECT_EQ(p.TotalMemoryTraced(), 12 + 6);
   EXPECT_EQ(p.PeakMemoryTraced(), 12 + 6);
   p.HandleMalloc(fake_ptr3, 36, false);
@@ -69,7 +71,8 @@ TEST(HeapProfiler, GetTrace) {
 
   p.HandleMalloc(fake_ptr, 12, false);
   auto trace = p.GetTrace(fake_ptr);
-  EXPECT_EQ(trace.size(), 1);
+  // No Python thread state.
+  EXPECT_EQ(trace.size(), 0);
 
   // Not in traced set.
   void *invalid_ptr = reinterpret_cast<void *>(456);

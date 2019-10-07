@@ -13,6 +13,12 @@ namespace {
 // Our global profiler state.
 static std::unique_ptr<HeapProfiler> g_profiler;
 
+#if PY_MAJOR_VERSION >= 3
+#define STRING_INTERN PyUnicode_InternFromString
+#else
+#define STRING_INTERN PyString_InternFromString
+#endif
+
 // Changed in version 3.5: The PyMemAllocator structure was renamed to
 // PY_MEM_ALLOCATOR and a new calloc field was added.
 #if PY_VERSION_HEX >= 0x03050000
@@ -130,7 +136,18 @@ PyObjectRef NewPyTraces(const std::vector<void *> &snap) {
   std::size_t i = 0;
   for (const void *ptr : snap) {
     // Build the Trace value as a Python tuple (size, traceback).
-    const auto trace = g_profiler->GetTrace(ptr);
+    auto trace = g_profiler->GetTrace(ptr);
+    PyObjectRef unknown_filename;
+    PyObjectRef unknown_name;
+    if (trace.size() == 0) {
+      unknown_filename.reset(STRING_INTERN("<unknown>"));
+      unknown_name.reset(STRING_INTERN("[Unknown - No Python thread state]"));
+      trace.push_back({
+        .filename = unknown_filename.get(),
+        .name = unknown_name.get(),
+      });
+    }
+
     PyObjectRef py_frames(NewPyTrace(trace));
 
     // Dedupe traceback tuples to reduce memory usage.

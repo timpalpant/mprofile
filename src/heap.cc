@@ -1,11 +1,5 @@
 #include "heap.h"
 
-#if PY_MAJOR_VERSION >= 3
-#define STRING_INTERN PyUnicode_InternFromString
-#else
-#define STRING_INTERN PyString_InternFromString
-#endif
-
 // Records the given pointer and size in the current set of live ptrs,
 // associated with the current stack trace.
 void HeapProfiler::RecordMalloc(void *ptr, size_t size) {
@@ -15,19 +9,6 @@ void HeapProfiler::RecordMalloc(void *ptr, size_t size) {
   // the GIL is held.
   CallTrace trace;
   GetCurrentCallTrace(&trace, max_frames_);
-
-  // No Python call trace was found. Record this sample as unknown.
-  if (trace.size() == 0) {
-    // FIXME: These interned strings currently get leaked, even if the
-    // profiler is disabled.
-    static PyObject *filename = STRING_INTERN("<unknown>");
-    static PyObject *name = STRING_INTERN("[Unknown - No Python thread state]");
-    trace.push_back({
-        .filename = filename,
-        .name = name,
-    });
-  }
-
   auto trace_handle = traces_.Intern(trace);
 
   Spinlock lock(flag_);
