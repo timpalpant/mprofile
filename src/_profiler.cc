@@ -32,7 +32,8 @@ bool StartProfilerWithParams(uint64_t max_frames, uint64_t sample_rate) {
   }
 
   Sampler::SetSamplePeriod(sample_rate);
-  AttachHeapProfiler(std::unique_ptr<HeapProfiler>(new HeapProfiler(max_frames)));
+  AttachHeapProfiler(
+      std::unique_ptr<HeapProfiler>(new HeapProfiler(max_frames)));
   return true;
 }
 

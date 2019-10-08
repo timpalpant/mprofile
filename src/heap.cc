@@ -13,51 +13,49 @@ void HeapProfiler::RecordMalloc(void *ptr, size_t size) {
 
   Spinlock lock(flag_);
   LivePointer lp = {trace_handle, size};
-  live_set_.emplace(ptr, lp);
+  live_set_.Insert(ptr, lp);
   total_mem_traced_ += size;
   if (total_mem_traced_ > peak_mem_traced_) {
     peak_mem_traced_ = total_mem_traced_;
   }
 }
 
-std::vector<void *> HeapProfiler::GetSnapshot() {
+// Callback used to extract all traces from AddressMap into a std::vector.
+template <class Value>
+void AppendToVector(const void *ptr, Value lp, std::vector<const void *> &v) {
+  v.push_back(ptr);
+}
+
+std::vector<const void *> HeapProfiler::GetSnapshot() {
   Spinlock lock(flag_);
-  std::vector<void *> snap;
-  snap.reserve(live_set_.size());
-
-  for (const auto &item : live_set_) {
-    snap.push_back(item.first);
-  }
-
+  std::vector<const void *> snap;
+  live_set_.Iterate<std::vector<const void *> &>(&AppendToVector, snap);
   return snap;
 }
 
 std::vector<FuncLoc> HeapProfiler::GetTrace(const void *ptr) {
   Spinlock lock(flag_);
-  auto it = live_set_.find(ptr);
-  if (it == live_set_.end()) {
+  const LivePointer *lp = live_set_.Find(ptr);
+  if (lp == nullptr) {
     return {};
   }
-
-  const LivePointer &lp = it->second;
-  return traces_.GetTrace(lp.trace_handle);
+  return traces_.GetTrace(lp->trace_handle);
 }
 
 std::size_t HeapProfiler::GetSize(const void *ptr) {
   Spinlock lock(flag_);
-  auto it = live_set_.find(ptr);
-  if (it == live_set_.end()) {
+  const LivePointer *lp = live_set_.Find(ptr);
+  if (lp == nullptr) {
     return {};
   }
 
-  const LivePointer &lp = it->second;
-  return lp.size;
+  return lp->size;
 }
 
 void HeapProfiler::Reset() {
   Spinlock lock(flag_);
 
-  phmap::flat_hash_map<void *, const LivePointer> empty_live_set;
+  AddressMap<LivePointer> empty_live_set(malloc, free);
   std::swap(empty_live_set, live_set_);
   total_mem_traced_ = 0;
   peak_mem_traced_ = 0;  // Matches tracemalloc behavior.

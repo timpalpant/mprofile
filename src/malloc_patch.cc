@@ -76,10 +76,6 @@ void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
 }
 
 void WrappedFree(void *ctx, void *ptr) {
-  if (ptr == nullptr) {
-    return;
-  }
-
   ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   alloc->free(alloc->ctx, ptr);
@@ -116,7 +112,7 @@ PyObjectRef NewPyTrace(const std::vector<FuncLoc> &trace) {
   return py_frames;
 }
 
-PyObjectRef NewPyTraces(const std::vector<void *> &snap) {
+PyObjectRef NewPyTraces(const std::vector<const void *> &snap) {
 #if PY_MAJOR_VERSION >= 3
   // Asserts that GIL is held in debug mode.
   assert(PyGILState_Check());
@@ -143,8 +139,8 @@ PyObjectRef NewPyTraces(const std::vector<void *> &snap) {
       unknown_filename.reset(STRING_INTERN("<unknown>"));
       unknown_name.reset(STRING_INTERN("[Unknown - No Python thread state]"));
       trace.push_back({
-        .filename = unknown_filename.get(),
-        .name = unknown_name.get(),
+          .filename = unknown_filename.get(),
+          .name = unknown_name.get(),
       });
     }
 

@@ -7,6 +7,7 @@
 #include <atomic>
 #include <vector>
 
+#include "third_party/google/tcmalloc/addressmap.h"
 #include "third_party/google/tcmalloc/sampler.h"
 #include "third_party/greg7mdp/parallel-hashmap/phmap.h"
 
@@ -17,7 +18,10 @@ class HeapProfiler {
  public:
   HeapProfiler() : HeapProfiler(kMaxFramesToCapture) {}
   explicit HeapProfiler(int max_frames)
-      : max_frames_(max_frames), total_mem_traced_(0), peak_mem_traced_(0) {}
+      : max_frames_(max_frames),
+        live_set_(malloc, free),
+        total_mem_traced_(0),
+        peak_mem_traced_(0) {}
   // Not copyable or assignable.
   HeapProfiler(const HeapProfiler &) = delete;
   HeapProfiler &operator=(const HeapProfiler &) = delete;
@@ -27,7 +31,7 @@ class HeapProfiler {
   void HandleRealloc(void *oldptr, void *newptr, std::size_t size, bool is_raw);
   void HandleFree(void *ptr);
 
-  std::vector<void *> GetSnapshot();
+  std::vector<const void *> GetSnapshot();
   int GetMaxFrames() const { return max_frames_; }
   std::vector<FuncLoc> GetTrace(const void *ptr);
   std::size_t GetSize(const void *ptr);
@@ -42,9 +46,9 @@ class HeapProfiler {
   struct LivePointer {
     // The trace at which it was allocated.
     // This is a reference to an element in traces_.
-    const CallTraceSet::TraceHandle trace_handle;
+    CallTraceSet::TraceHandle trace_handle;
     // The size of the memory allocated.
-    const std::size_t size;
+    std::size_t size;
   };
 
   int max_frames_;
@@ -53,7 +57,7 @@ class HeapProfiler {
 
   // Map of live pointer -> trace + size of that pointer (if it was sampled).
   // Protected by flag_.
-  phmap::flat_hash_map<void *, const LivePointer> live_set_;
+  AddressMap<LivePointer> live_set_;
   std::size_t total_mem_traced_;
   std::size_t peak_mem_traced_;
 
@@ -96,17 +100,15 @@ inline void HeapProfiler::HandleRealloc(void *oldptr, void *newptr,
 }
 
 inline void HeapProfiler::HandleFree(void *ptr) {
-  assert(ptr != nullptr);
   // We could use a reader-writer lock and only take the write lock
   // if the pointer is found in the live set. In practice this is a little
   // bit slower and likely not beneficial since Python is mostly
   // single-threaded anyway. The GIL cannot be held in HandleFree because
   // it would introduce a deadlock in PyThreadState_DeleteCurrent().
   Spinlock lock(flag_);
-  auto it = live_set_.find(ptr);
-  if (UNLIKELY(it != live_set_.end())) {
-    total_mem_traced_ -= it->second.size;
-    live_set_.erase(it);
+  LivePointer removed;
+  if (UNLIKELY(live_set_.FindAndRemove(ptr, &removed))) {
+    total_mem_traced_ -= removed.size;
   }
 }
 
