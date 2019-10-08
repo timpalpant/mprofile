@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include setup.py
+
+include mprofile/*.py
+include test/*.py
+include src/*.cc src/*.h
+
+recursive-include third_party *.h *.hpp *.c *.cc *.cpp
