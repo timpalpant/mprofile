@@ -7,11 +7,14 @@ import math
 import os.path
 
 # Import types and functions implemented in C
-from mprofile._profiler import *
-from mprofile._profiler import _get_object_traceback, _get_traces
+try:
+    from mprofile._profiler import *
+    from mprofile._profiler import _get_object_traceback, _get_traces
+except ImportError as e:
+    raise ImportError("Extension module is unavailable, you must use >= 3.4 or apply interpreter patch: %s" % e)
 
 # setup.py reads the version information from here to set package version
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 
 
 def _format_size(size, sign):

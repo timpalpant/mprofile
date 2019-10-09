@@ -21,12 +21,6 @@ def globex(pattern, exclude=[]):
             if not any(fnmatch.fnmatch(fn, pattern) for pattern in exclude)]
 
 
-pythonapi = ctypes.cdll.LoadLibrary(None)
-if not hasattr(pythonapi, 'PyMem_SetAllocator'):
-    print(("WARNING: PyMem_SetAllocatorEx: missing, %s has not been patched. " +
-           "Heap profiler will attempt runtime patching") % sys.executable)
-
-
 ext = Extension(
     "mprofile._profiler",
     language="c++",
@@ -39,6 +33,13 @@ ext = Extension(
     extra_compile_args=["-std=c++11"],
     extra_link_args=["-std=c++11", "-static-libstdc++"],
 )
+
+
+ext_modules = [ext]
+pythonapi = ctypes.cdll.LoadLibrary(None)
+if not hasattr(pythonapi, 'PyMem_SetAllocator'):
+    ext_modules = []
+    print("WARNING: PyMem_SetAllocatorEx: missing, %s has not been patched. " % sys.executable)
 
 
 def get_version():
@@ -89,6 +90,6 @@ setup(
     license="MIT",
     setup_requires=["wheel"],
     packages=["mprofile"],
-    ext_modules=[ext],
+    ext_modules=ext_modules,
     test_suite="test",
 )
