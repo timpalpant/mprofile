@@ -12,17 +12,18 @@
 #include "third_party/google/tcmalloc/sampler.h"
 #include "third_party/greg7mdp/parallel-hashmap/phmap.h"
 
-#include "spinlock.h"
 #include "stacktraces.h"
 
 class HeapProfiler {
  public:
-  HeapProfiler() : HeapProfiler(kMaxFramesToCapture) {}
-  explicit HeapProfiler(int max_frames)
+  HeapProfiler() : HeapProfiler(kMaxFramesToCapture, 0) {}
+  HeapProfiler(int max_frames, int sample_rate)
       : max_frames_(max_frames),
         live_set_(malloc, free),
         total_mem_traced_(0),
-        peak_mem_traced_(0) {}
+        peak_mem_traced_(0) {
+    sampler_.SetSamplePeriod(sample_rate);
+  }
   // Not copyable or assignable.
   HeapProfiler(const HeapProfiler &) = delete;
   HeapProfiler &operator=(const HeapProfiler &) = delete;
@@ -34,6 +35,7 @@ class HeapProfiler {
 
   std::vector<const void *> GetSnapshot();
   int GetMaxFrames() const { return max_frames_; }
+  int GetSamplePeriod() const { return sampler_.GetSamplePeriod(); }
   std::vector<FuncLoc> GetTrace(const void *ptr);
   std::size_t GetSize(const void *ptr);
   std::size_t TotalMemoryTraced();
@@ -53,11 +55,9 @@ class HeapProfiler {
   };
 
   int max_frames_;
-  // Guards access to live_set_.
-  std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
+  Sampler sampler_;
 
   // Map of live pointer -> trace + size of that pointer (if it was sampled).
-  // Protected by flag_.
   AddressMap<LivePointer> live_set_;
   std::size_t total_mem_traced_;
   std::size_t peak_mem_traced_;
@@ -72,8 +72,7 @@ inline void HeapProfiler::HandleMalloc(void *ptr, std::size_t size,
   // NOTE: Only constant expressions are safe to use as thread_local
   // initializers in a dynamic library. This is why the sample rate is
   // set as a static variable on the Sampler class.
-  thread_local Sampler sampler;
-  if (LIKELY(sampler.RecordAllocation(size))) {
+  if (LIKELY(sampler_.RecordAllocation(size))) {
     return;
   }
 
@@ -109,7 +108,6 @@ inline void HeapProfiler::HandleFree(void *ptr) {
   // bit slower and likely not beneficial since Python is mostly
   // single-threaded anyway. The GIL cannot be held in HandleFree because
   // it would introduce a deadlock in PyThreadState_DeleteCurrent().
-  Spinlock lock(flag_);
   LivePointer removed;
   if (UNLIKELY(live_set_.FindAndRemove(ptr, &removed))) {
     total_mem_traced_ -= removed.size;

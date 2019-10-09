@@ -11,7 +11,6 @@ void HeapProfiler::RecordMalloc(void *ptr, size_t size) {
   GetCurrentCallTrace(&trace, max_frames_);
   auto trace_handle = traces_.Intern(trace);
 
-  Spinlock lock(flag_);
   LivePointer lp = {trace_handle, size};
   live_set_.Insert(ptr, lp);
   total_mem_traced_ += size;
@@ -27,14 +26,12 @@ void AppendToVector(const void *ptr, Value lp, std::vector<const void *> &v) {
 }
 
 std::vector<const void *> HeapProfiler::GetSnapshot() {
-  Spinlock lock(flag_);
   std::vector<const void *> snap;
   live_set_.Iterate<std::vector<const void *> &>(&AppendToVector, snap);
   return snap;
 }
 
 std::vector<FuncLoc> HeapProfiler::GetTrace(const void *ptr) {
-  Spinlock lock(flag_);
   const LivePointer *lp = live_set_.Find(ptr);
   if (lp == nullptr) {
     return {};
@@ -43,7 +40,6 @@ std::vector<FuncLoc> HeapProfiler::GetTrace(const void *ptr) {
 }
 
 std::size_t HeapProfiler::GetSize(const void *ptr) {
-  Spinlock lock(flag_);
   const LivePointer *lp = live_set_.Find(ptr);
   if (lp == nullptr) {
     return 0;
@@ -53,7 +49,6 @@ std::size_t HeapProfiler::GetSize(const void *ptr) {
 }
 
 void HeapProfiler::Reset() {
-  Spinlock lock(flag_);
   live_set_.Reset();
   total_mem_traced_ = 0;
   peak_mem_traced_ = 0;  // Matches tracemalloc behavior.
@@ -61,11 +56,9 @@ void HeapProfiler::Reset() {
 }
 
 std::size_t HeapProfiler::TotalMemoryTraced() {
-  Spinlock lock(flag_);
   return total_mem_traced_;
 }
 
 std::size_t HeapProfiler::PeakMemoryTraced() {
-  Spinlock lock(flag_);
   return peak_mem_traced_;
 }

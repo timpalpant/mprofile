@@ -118,8 +118,8 @@ class Sampler {
   // Generate a geometric with mean 512K (or FLAG_tcmalloc_sample_parameter)
   ssize_t PickNextSamplingPoint();
 
-  static void SetSamplePeriod(int sampling_rate) { sampling_rate_ = sampling_rate; }
-  static int GetSamplePeriod() { return sampling_rate_; }
+  void SetSamplePeriod(int sampling_rate) { sampling_rate_ = sampling_rate; }
+  int GetSamplePeriod() const { return sampling_rate_; }
 
   // The following are public for the purposes of testing
   static uint64_t NextRandom(uint64_t rnd_);  // Returns the next prng value
@@ -127,7 +127,7 @@ class Sampler {
  private:
   bool RecordAllocationSlow(size_t k);
 
-  static int sampling_rate_;
+  int sampling_rate_{};
 
   // Bytes until we sample next.
   //

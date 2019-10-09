@@ -5,13 +5,13 @@
 
 #include <Python.h>
 
-#include "reentrant_scope.h"
 #include "scoped_object.h"
 
 namespace {
 
 // Our global profiler state.
 static std::unique_ptr<HeapProfiler> g_profiler;
+static std::atomic_flag lock = ATOMIC_FLAG_INIT;
 
 #if PY_MAJOR_VERSION >= 3
 #define STRING_INTERN PyUnicode_InternFromString
@@ -41,46 +41,54 @@ struct {
 // each case, ctx will be a pointer to the appropriate base allocator.
 
 void *WrappedMalloc(void *ctx, size_t size) {
-  ReentrantScope scope;
+  // NOTE: Because we are guarding against re-entrancy with a global atomic,
+  // we may also fail to sample concurrent calls to malloc. We accept this
+  // potential small inaccuracy since Python is mostly single threaded due
+  // to the GIL and it means that we have better performance.
+  bool is_reentrant = lock.test_and_set(std::memory_order_acquire);
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr = alloc->malloc(alloc->ctx, size);
-  if (scope.is_top_level()) {
+  if (LIKELY(!is_reentrant)) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleMalloc(ptr, size, is_raw);
+    lock.clear(std::memory_order_release);
   }
   return ptr;
 }
 
 #if PY_VERSION_HEX >= 0x03050000
 void *WrappedCalloc(void *ctx, size_t nelem, size_t elsize) {
-  ReentrantScope scope;
+  bool is_reentrant = lock.test_and_set(std::memory_order_acquire);
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr = alloc->calloc(alloc->ctx, nelem, elsize);
-  if (scope.is_top_level()) {
+  if (LIKELY(!is_reentrant)) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleMalloc(ptr, nelem * elsize, is_raw);
+    lock.clear(std::memory_order_release);
   }
   return ptr;
 }
 #endif
 
 void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
-  ReentrantScope scope;
+  bool is_reentrant = lock.test_and_set(std::memory_order_acquire);
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-  if (scope.is_top_level()) {
+  if (LIKELY(!is_reentrant)) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleRealloc(ptr, ptr2, new_size, is_raw);
+    lock.clear(std::memory_order_release);
   }
   return ptr2;
 }
 
 void WrappedFree(void *ctx, void *ptr) {
-  ReentrantScope scope;
+  bool is_reentrant = lock.test_and_set(std::memory_order_acquire);
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   alloc->free(alloc->ctx, ptr);
-  if (scope.is_top_level()) {
+  if (LIKELY(!is_reentrant)) {
     g_profiler->HandleFree(ptr);
+    lock.clear(std::memory_order_release);
   }
 }
 
@@ -235,6 +243,14 @@ int GetMaxFrames() {
   }
 
   return g_profiler->GetMaxFrames();
+}
+
+int GetSamplePeriod() {
+  if (!IsHeapProfilerAttached()) {
+    return -1;
+  }
+
+  return g_profiler->GetSamplePeriod();
 }
 
 PyObject *GetTrace(void *ptr) {

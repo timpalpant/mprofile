@@ -26,6 +26,9 @@ PyObject *GetHeapProfile();
 // Get the current traceback limit for number of frames to save.
 int GetMaxFrames();
 
+// Get the current sampling rate, in bytes.
+int GetSamplePeriod();
+
 // Get the traceback where the given pointer was allocated.
 PyObject *GetTrace(void *ptr);
 
