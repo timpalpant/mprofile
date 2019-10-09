@@ -40,6 +40,8 @@
 
 using std::min;
 
+int Sampler::sampling_rate_ = 0;
+
 // Run this before using your sampler
 void Sampler::Init(uint64_t seed) {
   assert(seed != 0);

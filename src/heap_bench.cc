@@ -6,7 +6,8 @@
 
 static void BM_HandleMalloc(benchmark::State &state) {
   auto gil_state = PyGILState_Ensure();
-  HeapProfiler profiler(kMaxFramesToCapture, state.range(0));
+  Sampler::SetSamplePeriod(state.range(0));
+  HeapProfiler profiler;
   for (auto _ : state) {
     void *fake_ptr = reinterpret_cast<void *>(1234);
     profiler.HandleMalloc(fake_ptr, 1024, false);
@@ -15,7 +16,8 @@ static void BM_HandleMalloc(benchmark::State &state) {
 }
 
 static void BM_HandleRawMalloc(benchmark::State &state) {
-  HeapProfiler profiler(kMaxFramesToCapture, state.range(0));
+  Sampler::SetSamplePeriod(state.range(0));
+  HeapProfiler profiler;
   for (auto _ : state) {
     void *fake_ptr = reinterpret_cast<void *>(1234);
     profiler.HandleMalloc(fake_ptr, 1024, true);
@@ -23,7 +25,8 @@ static void BM_HandleRawMalloc(benchmark::State &state) {
 }
 
 static void BM_HandleFree(benchmark::State &state) {
-  HeapProfiler profiler(kMaxFramesToCapture, state.range(0));
+  Sampler::SetSamplePeriod(state.range(0));
+  HeapProfiler profiler;
   int n = 100000;
   for (int i = 0; i < n; i++) {
     void *fake_ptr = reinterpret_cast<void *>((rand() % n) + 1);

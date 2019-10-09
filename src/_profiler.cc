@@ -31,8 +31,9 @@ bool StartProfilerWithParams(uint64_t max_frames, uint64_t sample_rate) {
     return false;
   }
 
-  std::unique_ptr<HeapProfiler> p(new HeapProfiler(max_frames, sample_rate));
-  AttachHeapProfiler(std::move(p));
+  Sampler::SetSamplePeriod(sample_rate);
+  AttachHeapProfiler(
+      std::unique_ptr<HeapProfiler>(new HeapProfiler(max_frames)));
   return true;
 }
 
@@ -107,7 +108,7 @@ PyObject *GetSampleRate(PyObject *self, PyObject *args) {
     return nullptr;
   }
 
-  return INT_FROM_LONG(GetSamplePeriod());
+  return INT_FROM_LONG(Sampler::GetSamplePeriod());
 }
 
 PyObject *GetTracebackLimit(PyObject *self, PyObject *args) {
