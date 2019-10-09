@@ -4,6 +4,7 @@
 #ifndef MPROFILE_SRC_HEAP_H_
 #define MPROFILE_SRC_HEAP_H_
 
+#include <stdlib.h>
 #include <atomic>
 #include <vector>
 
@@ -100,6 +101,7 @@ inline void HeapProfiler::HandleRealloc(void *oldptr, void *newptr,
 }
 
 inline void HeapProfiler::HandleFree(void *ptr) {
+  assert(ptr != nullptr);
   // We could use a reader-writer lock and only take the write lock
   // if the pointer is found in the live set. In practice this is a little
   // bit slower and likely not beneficial since Python is mostly

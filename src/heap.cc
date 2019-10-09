@@ -46,7 +46,7 @@ std::size_t HeapProfiler::GetSize(const void *ptr) {
   Spinlock lock(flag_);
   const LivePointer *lp = live_set_.Find(ptr);
   if (lp == nullptr) {
-    return {};
+    return 0;
   }
 
   return lp->size;
@@ -54,9 +54,7 @@ std::size_t HeapProfiler::GetSize(const void *ptr) {
 
 void HeapProfiler::Reset() {
   Spinlock lock(flag_);
-
-  AddressMap<LivePointer> empty_live_set(malloc, free);
-  std::swap(empty_live_set, live_set_);
+  live_set_.Reset();
   total_mem_traced_ = 0;
   peak_mem_traced_ = 0;  // Matches tracemalloc behavior.
   traces_.Reset();

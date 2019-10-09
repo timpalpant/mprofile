@@ -110,6 +110,9 @@ class AddressMap {
   // For instance, the allocator does not need to return initialized memory.
   AddressMap(Allocator alloc, DeAllocator dealloc);
   ~AddressMap();
+  // Not copyable or assignable.
+  AddressMap(const AddressMap &) = delete;
+  AddressMap &operator=(const AddressMap &) = delete;
 
   // If the map contains an entry for "key", return it. Else return nullptr.
   inline const Value* Find(Key key) const;
@@ -142,6 +145,9 @@ class AddressMap {
   // unnecessary dependencies to this class with low-level uses.
   template<class Type>
   inline void Iterate(void (*callback)(Key, Value*, Type), Type arg) const;
+
+  // Free all memory allocated by this map and reset it to an empty state.
+  void Reset();
 
  private:
   typedef uintptr_t Number;
@@ -282,6 +288,20 @@ AddressMap<Value>::~AddressMap() {
     (*dealloc_)(obj);
     obj = next;
   }
+}
+
+template <class Value>
+void AddressMap<Value>::Reset() {
+  // De-allocate all of the objects we allocated
+  for (Object* obj = allocated_; obj != nullptr; /**/) {
+    Object* next = obj->next;
+    (*dealloc_)(obj);
+    obj = next;
+  }
+
+  allocated_ = nullptr;
+  free_ = nullptr;
+  hashtable_ = New<Cluster*>(kHashSize);
 }
 
 template <class Value>

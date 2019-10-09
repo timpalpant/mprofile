@@ -76,6 +76,10 @@ void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
 }
 
 void WrappedFree(void *ctx, void *ptr) {
+  if (ptr == nullptr) {
+    return;
+  }
+
   ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   alloc->free(alloc->ctx, ptr);
