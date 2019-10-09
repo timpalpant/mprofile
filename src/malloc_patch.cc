@@ -5,13 +5,13 @@
 
 #include <Python.h>
 
-#include "reentrant_scope.h"
 #include "scoped_object.h"
 
 namespace {
 
 // Our global profiler state.
 static std::unique_ptr<HeapProfiler> g_profiler;
+static thread_local bool is_reentrant = false;
 
 #if PY_MAJOR_VERSION >= 3
 #define STRING_INTERN PyUnicode_InternFromString
@@ -41,46 +41,54 @@ struct {
 // each case, ctx will be a pointer to the appropriate base allocator.
 
 void *WrappedMalloc(void *ctx, size_t size) {
-  ReentrantScope scope;
+  bool is_outer_scope = !is_reentrant;
+  is_reentrant = true;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr = alloc->malloc(alloc->ctx, size);
-  if (scope.is_top_level()) {
+  if (is_outer_scope) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleMalloc(ptr, size, is_raw);
+    is_reentrant = false;
   }
   return ptr;
 }
 
 #if PY_VERSION_HEX >= 0x03050000
 void *WrappedCalloc(void *ctx, size_t nelem, size_t elsize) {
-  ReentrantScope scope;
+  bool is_outer_scope = !is_reentrant;
+  is_reentrant = true;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr = alloc->calloc(alloc->ctx, nelem, elsize);
-  if (scope.is_top_level()) {
+  if (is_outer_scope) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleMalloc(ptr, nelem * elsize, is_raw);
+    is_reentrant = false;
   }
   return ptr;
 }
 #endif
 
 void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
-  ReentrantScope scope;
+  bool is_outer_scope = !is_reentrant;
+  is_reentrant = true;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-  if (scope.is_top_level()) {
+  if (is_outer_scope) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleRealloc(ptr, ptr2, new_size, is_raw);
+    is_reentrant = false;
   }
   return ptr2;
 }
 
 void WrappedFree(void *ctx, void *ptr) {
-  ReentrantScope scope;
+  bool is_outer_scope = !is_reentrant;
+  is_reentrant = true;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   alloc->free(alloc->ctx, ptr);
-  if (scope.is_top_level()) {
+  if (is_outer_scope) {
     g_profiler->HandleFree(ptr);
+    is_reentrant = false;
   }
 }
 
