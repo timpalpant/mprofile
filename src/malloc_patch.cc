@@ -44,7 +44,7 @@ void *WrappedMalloc(void *ctx, size_t size) {
   ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr = alloc->malloc(alloc->ctx, size);
-  if (ptr && scope.is_top_level()) {
+  if (scope.is_top_level()) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleMalloc(ptr, size, is_raw);
   }
@@ -56,7 +56,7 @@ void *WrappedCalloc(void *ctx, size_t nelem, size_t elsize) {
   ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr = alloc->calloc(alloc->ctx, nelem, elsize);
-  if (ptr && scope.is_top_level()) {
+  if (scope.is_top_level()) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleMalloc(ptr, nelem * elsize, is_raw);
   }
@@ -68,7 +68,7 @@ void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
   ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-  if (ptr2 && scope.is_top_level()) {
+  if (scope.is_top_level()) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleRealloc(ptr, ptr2, new_size, is_raw);
   }
@@ -76,10 +76,6 @@ void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
 }
 
 void WrappedFree(void *ctx, void *ptr) {
-  if (ptr == nullptr) {
-    return;
-  }
-
   ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   alloc->free(alloc->ctx, ptr);

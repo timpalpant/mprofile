@@ -69,12 +69,15 @@ class HeapProfiler {
 
 inline void HeapProfiler::HandleMalloc(void *ptr, std::size_t size,
                                        bool is_raw) {
-  assert(ptr != nullptr);
   // NOTE: Only constant expressions are safe to use as thread_local
   // initializers in a dynamic library. This is why the sample rate is
   // set as a static variable on the Sampler class.
   thread_local Sampler sampler;
   if (LIKELY(sampler.RecordAllocation(size))) {
+    return;
+  }
+
+  if (ptr == nullptr) {
     return;
   }
 
@@ -101,7 +104,6 @@ inline void HeapProfiler::HandleRealloc(void *oldptr, void *newptr,
 }
 
 inline void HeapProfiler::HandleFree(void *ptr) {
-  assert(ptr != nullptr);
   // We could use a reader-writer lock and only take the write lock
   // if the pointer is found in the live set. In practice this is a little
   // bit slower and likely not beneficial since Python is mostly
