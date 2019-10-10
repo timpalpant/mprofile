@@ -1,6 +1,7 @@
 
 #include <Python.h>
 
+#include <cstdlib>
 #include <memory>
 #include "third_party/google/tcmalloc/sampler.h"
 
@@ -136,7 +137,7 @@ PyObject *GetObjectTraceback(PyObject *self, PyObject *args) {
 }
 
 int GetEnvFrames() {
-  char *p = Py_GETENV("MPROFILEFRAMES");
+  char *p = std::getenv("MPROFILEFRAMES");
   if (p == NULL || *p == '\0') {
     return kMaxFramesToCapture;
   }
@@ -193,7 +194,7 @@ bool MProfileInit(PyObject *self) {
     LogWarning("mprofile: Failed to install atexit handler");
   }
 
-  char *p = Py_GETENV("MPROFILERATE");
+  char *p = std::getenv("MPROFILERATE");
   if (p == NULL || *p == '\0') {
     return true;
   }
