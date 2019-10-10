@@ -14,7 +14,7 @@ except ImportError as e:
     raise ImportError("Extension module is unavailable, you must use >= 3.4 or apply interpreter patch: %s" % e)
 
 # setup.py reads the version information from here to set package version
-__version__ = '0.0.6'
+__version__ = '0.0.7'
 
 
 def _format_size(size, sign):
