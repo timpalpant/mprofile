@@ -1,4 +1,5 @@
 [![PyPI](https://img.shields.io/pypi/v/mprofile)](https://pypi.org/project/mprofile/)
+[![Build Status](https://travis-ci.org/timpalpant/mprofile.svg?branch=master)](https://travis-ci.org/timpalpant/mprofile)
 ![PyPI - License](https://img.shields.io/pypi/l/mprofile)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mprofile)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/mprofile.svg)](https://pypistats.org/packages/mprofile)

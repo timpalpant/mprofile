@@ -1,0 +1,7 @@
+language: python
+
+services:
+  - docker
+
+script:
+  - ./docker_build_wheels.sh
