@@ -21,6 +21,13 @@ def globex(pattern, exclude=[]):
             if not any(fnmatch.fnmatch(fn, pattern) for pattern in exclude)]
 
 
+define_macros = [("PY_SSIZE_T_CLEAN", None)]
+pythonapi = ctypes.cdll.LoadLibrary(None)
+if not hasattr(pythonapi, 'PyMem_SetAllocator'):
+    print("WARNING: PyMem_SetAllocator: missing, %s has not been patched. " % sys.executable)
+    define_macros.append(("MPROFILE_PATCH_FORWARD", None))
+
+
 ext = Extension(
     "mprofile._profiler",
     language="c++",
@@ -29,17 +36,10 @@ ext = Extension(
     ],
     depends=glob.glob("src/*.h"),
     include_dirs=[os.getcwd(), "src"],
-    define_macros=[("PY_SSIZE_T_CLEAN", None)],
+    define_macros=define_macros,
     extra_compile_args=["-std=c++11"],
     extra_link_args=["-std=c++11", "-static-libstdc++"],
 )
-
-
-ext_modules = [ext]
-pythonapi = ctypes.cdll.LoadLibrary(None)
-if not hasattr(pythonapi, 'PyMem_SetAllocator'):
-    ext_modules = []
-    print("WARNING: PyMem_SetAllocatorEx: missing, %s has not been patched. " % sys.executable)
 
 
 def get_version():
@@ -90,6 +90,6 @@ setup(
     license="MIT",
     setup_requires=["wheel"],
     packages=["mprofile"],
-    ext_modules=ext_modules,
+    ext_modules=[ext],
     test_suite="test",
 )

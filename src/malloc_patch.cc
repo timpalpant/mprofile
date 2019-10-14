@@ -4,6 +4,9 @@
 #include "malloc_patch.h"
 
 #include <Python.h>
+#ifdef MPROFILE_PATCH_FORWARD
+#include "pep445.h"
+#endif
 
 #include "scoped_object.h"
 

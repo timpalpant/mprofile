@@ -38,4 +38,4 @@ std::size_t GetHeapProfilerMemUsage();
 // Get the <current, peak> memory usage traced, in bytes.
 std::pair<std::size_t, std::size_t> GetHeapProfilerTracedMemory();
 
-#endif  // MPROFILE_MALLOC_PATCH_H__
+#endif  // MPROFILE_MALLOC_PATCH_H_
