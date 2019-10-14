@@ -13,8 +13,8 @@ except ImportError:
     _testcapi = None
 
 
-EMPTY_STRING_SIZE = sys.getsizeof(b'')
-INVALID_NFRAME = (-1, 2**30)
+EMPTY_STRING_SIZE = sys.getsizeof(b"")
+INVALID_NFRAME = (-1, 2 ** 30)
 
 
 def get_frames(nframe, lineno_delta):
@@ -30,12 +30,14 @@ def get_frames(nframe, lineno_delta):
             break
     return tuple(frames)
 
+
 def allocate_bytes(size):
     nframe = mprofile.get_traceback_limit()
-    bytes_len = (size - EMPTY_STRING_SIZE)
+    bytes_len = size - EMPTY_STRING_SIZE
     frames = get_frames(nframe, 1)
-    data = b'x' * bytes_len
+    data = b"x" * bytes_len
     return data, mprofile.Traceback(frames)
+
 
 def create_snapshots():
     traceback_limit = 2
@@ -44,44 +46,43 @@ def create_snapshots():
     # traceback_frames) tuples. traceback_frames is a tuple of
     # (name, filename, start_line, line_number) tuples.
     raw_traces = [
-        (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-        (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-        (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-
-        (2, (('test', 'a.py', 1, 5), ('test', 'b.py', 1, 4))),
-
-        (66, (('test', 'b.py', 1, 1),)),
-
-        (7, (('test', '<unknown>', 1, 0),)),
+        (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+        (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+        (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+        (2, (("test", "a.py", 1, 5), ("test", "b.py", 1, 4))),
+        (66, (("test", "b.py", 1, 1),)),
+        (7, (("test", "<unknown>", 1, 0),)),
     ]
     snapshot = mprofile.Snapshot(raw_traces, traceback_limit)
 
     raw_traces2 = [
-        (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-        (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-        (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-
-        (2, (('test', 'a.py', 1, 5), ('test', 'b.py', 1, 4))),
-        (5000, (('test', 'a.py', 1, 5), ('test', 'b.py', 1, 4))),
-
-        (400, (('test', 'c.py', 1, 578),)),
+        (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+        (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+        (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+        (2, (("test", "a.py", 1, 5), ("test", "b.py", 1, 4))),
+        (5000, (("test", "a.py", 1, 5), ("test", "b.py", 1, 4))),
+        (400, (("test", "c.py", 1, 578),)),
     ]
     snapshot2 = mprofile.Snapshot(raw_traces2, traceback_limit)
 
     return (snapshot, snapshot2)
 
+
 def frame(name, filename, firstlineno, lineno):
     return mprofile.Frame((name, filename, firstlineno, lineno))
 
+
 def traceback(*frames):
-    frames = tuple(('test', f[0], 1, f[1]) for f in frames)
+    frames = tuple(("test", f[0], 1, f[1]) for f in frames)
     return mprofile.Traceback(frames)
+
 
 def traceback_lineno(filename, lineno):
     return traceback((filename, lineno))
 
+
 def traceback_filename(filename):
-    frames = (('', filename, 0, 0), )
+    frames = (("", filename, 0, 0),)
     return mprofile.Traceback(frames)
 
 
@@ -130,6 +131,7 @@ class TestMProfileEnabled(unittest.TestCase):
 
         print("Getting reference")
         import sys
+
         sys.stdout.flush()
         traceback = mprofile.get_object_traceback(obj)
         self.assertIsNotNone(traceback)
@@ -182,8 +184,10 @@ class TestMProfileEnabled(unittest.TestCase):
         # dummy wrappers to get more useful and identical frames in the traceback
         def allocate_bytes2(size):
             return allocate_bytes(size)
+
         def allocate_bytes3(size):
             return allocate_bytes2(size)
+
         def allocate_bytes4(size):
             return allocate_bytes3(size)
 
@@ -267,9 +271,11 @@ class TestMProfileEnabled(unittest.TestCase):
         mprofile.stop()
         with self.assertRaises(RuntimeError) as cm:
             mprofile.take_snapshot()
-        self.assertEqual(str(cm.exception),
-                         "the mprofile module must be tracing memory "
-                         "allocations to take a snapshot")
+        self.assertEqual(
+            str(cm.exception),
+            "the mprofile module must be tracing memory "
+            "allocations to take a snapshot",
+        )
 
     def fork_child(self):
         if not mprofile.is_tracing():
@@ -284,7 +290,7 @@ class TestMProfileEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork()')
+    @unittest.skipUnless(hasattr(os, "fork"), "need os.fork()")
     def test_fork(self):
         # check that mprofile is still working after fork
         pid = os.fork()
@@ -306,17 +312,19 @@ class TestSnapshot(unittest.TestCase):
     maxDiff = 4000
 
     def test_create_snapshot(self):
-        raw_traces = [(5, (('test', 'a.py', 1, 2),))]
+        raw_traces = [(5, (("test", "a.py", 1, 2),))]
 
         with contextlib.ExitStack() as stack:
-            stack.enter_context(patch.object(mprofile, 'is_tracing',
-                                             return_value=True))
-            stack.enter_context(patch.object(mprofile, 'get_traceback_limit',
-                                             return_value=5))
-            stack.enter_context(patch.object(mprofile, 'get_sample_rate',
-                                             return_value=1))
-            stack.enter_context(patch.object(mprofile, '_get_traces',
-                                             return_value=raw_traces))
+            stack.enter_context(patch.object(mprofile, "is_tracing", return_value=True))
+            stack.enter_context(
+                patch.object(mprofile, "get_traceback_limit", return_value=5)
+            )
+            stack.enter_context(
+                patch.object(mprofile, "get_sample_rate", return_value=1)
+            )
+            stack.enter_context(
+                patch.object(mprofile, "_get_traces", return_value=raw_traces)
+            )
 
             snapshot = mprofile.take_snapshot()
             self.assertEqual(snapshot.traceback_limit, 5)
@@ -325,7 +333,7 @@ class TestSnapshot(unittest.TestCase):
             trace = snapshot.traces[0]
             self.assertEqual(trace.size, 5)
             self.assertEqual(len(trace.traceback), 1)
-            self.assertEqual(trace.traceback[0].filename, 'a.py')
+            self.assertEqual(trace.traceback[0].filename, "a.py")
             self.assertEqual(trace.traceback[0].lineno, 2)
 
     def test_filter_traces(self):
@@ -338,25 +346,31 @@ class TestSnapshot(unittest.TestCase):
 
         # exclude b.py
         snapshot3 = snapshot.filter_traces((filter1,))
-        self.assertEqual(snapshot3.traces._traces, [
-            (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-            (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-            (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-            (2, (('test', 'a.py', 1, 5), ('test', 'b.py', 1, 4))),
-            (7, (('test', '<unknown>', 1, 0),)),
-        ])
+        self.assertEqual(
+            snapshot3.traces._traces,
+            [
+                (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+                (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+                (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+                (2, (("test", "a.py", 1, 5), ("test", "b.py", 1, 4))),
+                (7, (("test", "<unknown>", 1, 0),)),
+            ],
+        )
 
         # filter_traces() must not touch the original snapshot
         self.assertEqual(snapshot.traces._traces, original_traces)
 
         # only include two lines of a.py
         snapshot4 = snapshot3.filter_traces((filter2, filter3))
-        self.assertEqual(snapshot4.traces._traces, [
-            (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-            (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-            (10, (('test', 'a.py', 1, 2), ('test', 'b.py', 1, 4))),
-            (2, (('test', 'a.py', 1, 5), ('test', 'b.py', 1, 4))),
-        ])
+        self.assertEqual(
+            snapshot4.traces._traces,
+            [
+                (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+                (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+                (10, (("test", "a.py", 1, 2), ("test", "b.py", 1, 4))),
+                (2, (("test", "a.py", 1, 5), ("test", "b.py", 1, 4))),
+            ],
+        )
 
         # No filter: just duplicate the snapshot
         snapshot5 = snapshot.filter_traces(())
@@ -368,203 +382,241 @@ class TestSnapshot(unittest.TestCase):
 
     def test_snapshot_group_by_line(self):
         snapshot, snapshot2 = create_snapshots()
-        tb_0 = traceback_lineno('<unknown>', 0)
-        tb_a_2 = traceback_lineno('a.py', 2)
-        tb_a_5 = traceback_lineno('a.py', 5)
-        tb_b_1 = traceback_lineno('b.py', 1)
-        tb_c_578 = traceback_lineno('c.py', 578)
+        tb_0 = traceback_lineno("<unknown>", 0)
+        tb_a_2 = traceback_lineno("a.py", 2)
+        tb_a_5 = traceback_lineno("a.py", 5)
+        tb_b_1 = traceback_lineno("b.py", 1)
+        tb_c_578 = traceback_lineno("c.py", 578)
 
         # stats per file and line
-        stats1 = snapshot.statistics('lineno')
-        self.assertEqual(stats1, [
-            mprofile.Statistic(tb_b_1, 66, 1),
-            mprofile.Statistic(tb_a_2, 30, 3),
-            mprofile.Statistic(tb_0, 7, 1),
-            mprofile.Statistic(tb_a_5, 2, 1),
-        ])
+        stats1 = snapshot.statistics("lineno")
+        self.assertEqual(
+            stats1,
+            [
+                mprofile.Statistic(tb_b_1, 66, 1),
+                mprofile.Statistic(tb_a_2, 30, 3),
+                mprofile.Statistic(tb_0, 7, 1),
+                mprofile.Statistic(tb_a_5, 2, 1),
+            ],
+        )
 
         # stats per file and line (2)
-        stats2 = snapshot2.statistics('lineno')
-        self.assertEqual(stats2, [
-            mprofile.Statistic(tb_a_5, 5002, 2),
-            mprofile.Statistic(tb_c_578, 400, 1),
-            mprofile.Statistic(tb_a_2, 30, 3),
-        ])
+        stats2 = snapshot2.statistics("lineno")
+        self.assertEqual(
+            stats2,
+            [
+                mprofile.Statistic(tb_a_5, 5002, 2),
+                mprofile.Statistic(tb_c_578, 400, 1),
+                mprofile.Statistic(tb_a_2, 30, 3),
+            ],
+        )
 
         # stats diff per file and line
-        statistics = snapshot2.compare_to(snapshot, 'lineno')
-        self.assertEqual(statistics, [
-            mprofile.StatisticDiff(tb_a_5, 5002, 5000, 2, 1),
-            mprofile.StatisticDiff(tb_c_578, 400, 400, 1, 1),
-            mprofile.StatisticDiff(tb_b_1, 0, -66, 0, -1),
-            mprofile.StatisticDiff(tb_0, 0, -7, 0, -1),
-            mprofile.StatisticDiff(tb_a_2, 30, 0, 3, 0),
-        ])
+        statistics = snapshot2.compare_to(snapshot, "lineno")
+        self.assertEqual(
+            statistics,
+            [
+                mprofile.StatisticDiff(tb_a_5, 5002, 5000, 2, 1),
+                mprofile.StatisticDiff(tb_c_578, 400, 400, 1, 1),
+                mprofile.StatisticDiff(tb_b_1, 0, -66, 0, -1),
+                mprofile.StatisticDiff(tb_0, 0, -7, 0, -1),
+                mprofile.StatisticDiff(tb_a_2, 30, 0, 3, 0),
+            ],
+        )
 
     def test_snapshot_group_by_file(self):
         snapshot, snapshot2 = create_snapshots()
-        tb_0 = traceback_filename('<unknown>')
-        tb_a = traceback_filename('a.py')
-        tb_b = traceback_filename('b.py')
-        tb_c = traceback_filename('c.py')
+        tb_0 = traceback_filename("<unknown>")
+        tb_a = traceback_filename("a.py")
+        tb_b = traceback_filename("b.py")
+        tb_c = traceback_filename("c.py")
 
         # stats per file
-        stats1 = snapshot.statistics('filename')
-        self.assertEqual(stats1, [
-            mprofile.Statistic(tb_b, 66, 1),
-            mprofile.Statistic(tb_a, 32, 4),
-            mprofile.Statistic(tb_0, 7, 1),
-        ])
+        stats1 = snapshot.statistics("filename")
+        self.assertEqual(
+            stats1,
+            [
+                mprofile.Statistic(tb_b, 66, 1),
+                mprofile.Statistic(tb_a, 32, 4),
+                mprofile.Statistic(tb_0, 7, 1),
+            ],
+        )
 
         # stats per file (2)
-        stats2 = snapshot2.statistics('filename')
-        self.assertEqual(stats2, [
-            mprofile.Statistic(tb_a, 5032, 5),
-            mprofile.Statistic(tb_c, 400, 1),
-        ])
+        stats2 = snapshot2.statistics("filename")
+        self.assertEqual(
+            stats2,
+            [mprofile.Statistic(tb_a, 5032, 5), mprofile.Statistic(tb_c, 400, 1)],
+        )
 
         # stats diff per file
-        diff = snapshot2.compare_to(snapshot, 'filename')
-        self.assertEqual(diff, [
-            mprofile.StatisticDiff(tb_a, 5032, 5000, 5, 1),
-            mprofile.StatisticDiff(tb_c, 400, 400, 1, 1),
-            mprofile.StatisticDiff(tb_b, 0, -66, 0, -1),
-            mprofile.StatisticDiff(tb_0, 0, -7, 0, -1),
-        ])
+        diff = snapshot2.compare_to(snapshot, "filename")
+        self.assertEqual(
+            diff,
+            [
+                mprofile.StatisticDiff(tb_a, 5032, 5000, 5, 1),
+                mprofile.StatisticDiff(tb_c, 400, 400, 1, 1),
+                mprofile.StatisticDiff(tb_b, 0, -66, 0, -1),
+                mprofile.StatisticDiff(tb_0, 0, -7, 0, -1),
+            ],
+        )
 
     def test_snapshot_group_by_traceback(self):
         snapshot, snapshot2 = create_snapshots()
 
         # stats per file
-        tb1 = traceback(('a.py', 2), ('b.py', 4))
-        tb2 = traceback(('a.py', 5), ('b.py', 4))
-        tb3 = traceback(('b.py', 1))
-        tb4 = traceback(('<unknown>', 0))
-        stats1 = snapshot.statistics('traceback')
-        self.assertEqual(stats1, [
-            mprofile.Statistic(tb3, 66, 1),
-            mprofile.Statistic(tb1, 30, 3),
-            mprofile.Statistic(tb4, 7, 1),
-            mprofile.Statistic(tb2, 2, 1),
-        ])
+        tb1 = traceback(("a.py", 2), ("b.py", 4))
+        tb2 = traceback(("a.py", 5), ("b.py", 4))
+        tb3 = traceback(("b.py", 1))
+        tb4 = traceback(("<unknown>", 0))
+        stats1 = snapshot.statistics("traceback")
+        self.assertEqual(
+            stats1,
+            [
+                mprofile.Statistic(tb3, 66, 1),
+                mprofile.Statistic(tb1, 30, 3),
+                mprofile.Statistic(tb4, 7, 1),
+                mprofile.Statistic(tb2, 2, 1),
+            ],
+        )
 
         # stats per file (2)
-        tb5 = traceback(('c.py', 578))
-        stats2 = snapshot2.statistics('traceback')
-        self.assertEqual(stats2, [
-            mprofile.Statistic(tb2, 5002, 2),
-            mprofile.Statistic(tb5, 400, 1),
-            mprofile.Statistic(tb1, 30, 3),
-        ])
+        tb5 = traceback(("c.py", 578))
+        stats2 = snapshot2.statistics("traceback")
+        self.assertEqual(
+            stats2,
+            [
+                mprofile.Statistic(tb2, 5002, 2),
+                mprofile.Statistic(tb5, 400, 1),
+                mprofile.Statistic(tb1, 30, 3),
+            ],
+        )
 
         # stats diff per file
-        diff = snapshot2.compare_to(snapshot, 'traceback')
-        self.assertEqual(diff, [
-            mprofile.StatisticDiff(tb2, 5002, 5000, 2, 1),
-            mprofile.StatisticDiff(tb5, 400, 400, 1, 1),
-            mprofile.StatisticDiff(tb3, 0, -66, 0, -1),
-            mprofile.StatisticDiff(tb4, 0, -7, 0, -1),
-            mprofile.StatisticDiff(tb1, 30, 0, 3, 0),
-        ])
+        diff = snapshot2.compare_to(snapshot, "traceback")
+        self.assertEqual(
+            diff,
+            [
+                mprofile.StatisticDiff(tb2, 5002, 5000, 2, 1),
+                mprofile.StatisticDiff(tb5, 400, 400, 1, 1),
+                mprofile.StatisticDiff(tb3, 0, -66, 0, -1),
+                mprofile.StatisticDiff(tb4, 0, -7, 0, -1),
+                mprofile.StatisticDiff(tb1, 30, 0, 3, 0),
+            ],
+        )
 
-        self.assertRaises(ValueError,
-                          snapshot.statistics, 'traceback', cumulative=True)
+        self.assertRaises(ValueError, snapshot.statistics, "traceback", cumulative=True)
 
     def test_snapshot_group_by_cumulative(self):
         snapshot, snapshot2 = create_snapshots()
-        tb_0 = traceback_filename('<unknown>')
-        tb_a = traceback_filename('a.py')
-        tb_b = traceback_filename('b.py')
-        tb_0_0 = traceback_lineno('<unknown>', 0)
-        tb_a_2 = traceback_lineno('a.py', 2)
-        tb_a_5 = traceback_lineno('a.py', 5)
-        tb_b_1 = traceback_lineno('b.py', 1)
-        tb_b_4 = traceback_lineno('b.py', 4)
+        tb_0 = traceback_filename("<unknown>")
+        tb_a = traceback_filename("a.py")
+        tb_b = traceback_filename("b.py")
+        tb_0_0 = traceback_lineno("<unknown>", 0)
+        tb_a_2 = traceback_lineno("a.py", 2)
+        tb_a_5 = traceback_lineno("a.py", 5)
+        tb_b_1 = traceback_lineno("b.py", 1)
+        tb_b_4 = traceback_lineno("b.py", 4)
 
         # per file
-        stats = snapshot.statistics('filename', True)
-        self.assertEqual(stats, [
-            mprofile.Statistic(tb_b, 98, 5),
-            mprofile.Statistic(tb_a, 32, 4),
-            mprofile.Statistic(tb_0, 7, 1),
-        ])
+        stats = snapshot.statistics("filename", True)
+        self.assertEqual(
+            stats,
+            [
+                mprofile.Statistic(tb_b, 98, 5),
+                mprofile.Statistic(tb_a, 32, 4),
+                mprofile.Statistic(tb_0, 7, 1),
+            ],
+        )
 
         # per line
-        stats = snapshot.statistics('lineno', True)
-        self.assertEqual(stats, [
-            mprofile.Statistic(tb_b_1, 66, 1),
-            mprofile.Statistic(tb_b_4, 32, 4),
-            mprofile.Statistic(tb_a_2, 30, 3),
-            mprofile.Statistic(tb_0_0, 7, 1),
-            mprofile.Statistic(tb_a_5, 2, 1),
-        ])
+        stats = snapshot.statistics("lineno", True)
+        self.assertEqual(
+            stats,
+            [
+                mprofile.Statistic(tb_b_1, 66, 1),
+                mprofile.Statistic(tb_b_4, 32, 4),
+                mprofile.Statistic(tb_a_2, 30, 3),
+                mprofile.Statistic(tb_0_0, 7, 1),
+                mprofile.Statistic(tb_a_5, 2, 1),
+            ],
+        )
 
     def test_trace_format(self):
         snapshot, snapshot2 = create_snapshots()
         trace = snapshot.traces[0]
-        self.assertEqual(str(trace), 'b.py:4: 10 B')
+        self.assertEqual(str(trace), "b.py:4: 10 B")
         traceback = trace.traceback
-        self.assertEqual(str(traceback), 'b.py:4')
+        self.assertEqual(str(traceback), "b.py:4")
         frame = traceback[0]
-        self.assertEqual(str(frame), 'b.py:4')
+        self.assertEqual(str(frame), "b.py:4")
 
     def test_statistic_format(self):
         snapshot, snapshot2 = create_snapshots()
-        stats = snapshot.statistics('lineno')
+        stats = snapshot.statistics("lineno")
         stat = stats[0]
-        self.assertEqual(str(stat),
-                         'b.py:1: size=66 B, count=1, average=66 B')
+        self.assertEqual(str(stat), "b.py:1: size=66 B, count=1, average=66 B")
 
     def test_statistic_diff_format(self):
         snapshot, snapshot2 = create_snapshots()
-        stats = snapshot2.compare_to(snapshot, 'lineno')
+        stats = snapshot2.compare_to(snapshot, "lineno")
         stat = stats[0]
-        self.assertEqual(str(stat),
-                         'a.py:5: size=5002 B (+5000 B), count=2 (+1), average=2501 B')
+        self.assertEqual(
+            str(stat), "a.py:5: size=5002 B (+5000 B), count=2 (+1), average=2501 B"
+        )
 
     def test_slices(self):
         snapshot, snapshot2 = create_snapshots()
-        self.assertEqual(snapshot.traces[:2],
-                         (snapshot.traces[0], snapshot.traces[1]))
+        self.assertEqual(snapshot.traces[:2], (snapshot.traces[0], snapshot.traces[1]))
 
         traceback = snapshot.traces[0].traceback
-        self.assertEqual(traceback[:2],
-                         (traceback[0], traceback[1]))
+        self.assertEqual(traceback[:2], (traceback[0], traceback[1]))
 
     def test_format_traceback(self):
         snapshot, snapshot2 = create_snapshots()
+
         def getline(filename, lineno):
-            return '  <%s, %s>' % (filename, lineno)
-        with unittest.mock.patch('mprofile.linecache.getline',
-                                 side_effect=getline):
+            return "  <%s, %s>" % (filename, lineno)
+
+        with unittest.mock.patch("mprofile.linecache.getline", side_effect=getline):
             tb = snapshot.traces[0].traceback
-            self.assertEqual(tb.format(),
-                             ['  File "b.py", line 4',
-                              '    <b.py, 4>',
-                              '  File "a.py", line 2',
-                              '    <a.py, 2>'])
+            self.assertEqual(
+                tb.format(),
+                [
+                    '  File "b.py", line 4',
+                    "    <b.py, 4>",
+                    '  File "a.py", line 2',
+                    "    <a.py, 2>",
+                ],
+            )
 
-            self.assertEqual(tb.format(limit=1),
-                             ['  File "a.py", line 2',
-                              '    <a.py, 2>'])
+            self.assertEqual(
+                tb.format(limit=1), ['  File "a.py", line 2', "    <a.py, 2>"]
+            )
 
-            self.assertEqual(tb.format(limit=-1),
-                             ['  File "b.py", line 4',
-                              '    <b.py, 4>'])
+            self.assertEqual(
+                tb.format(limit=-1), ['  File "b.py", line 4', "    <b.py, 4>"]
+            )
 
-            self.assertEqual(tb.format(most_recent_first=True),
-                             ['  File "a.py", line 2',
-                              '    <a.py, 2>',
-                              '  File "b.py", line 4',
-                              '    <b.py, 4>'])
+            self.assertEqual(
+                tb.format(most_recent_first=True),
+                [
+                    '  File "a.py", line 2',
+                    "    <a.py, 2>",
+                    '  File "b.py", line 4',
+                    "    <b.py, 4>",
+                ],
+            )
 
-            self.assertEqual(tb.format(limit=1, most_recent_first=True),
-                             ['  File "a.py", line 2',
-                              '    <a.py, 2>'])
+            self.assertEqual(
+                tb.format(limit=1, most_recent_first=True),
+                ['  File "a.py", line 2', "    <a.py, 2>"],
+            )
 
-            self.assertEqual(tb.format(limit=-1, most_recent_first=True),
-                             ['  File "b.py", line 4',
-                              '    <b.py, 4>'])
+            self.assertEqual(
+                tb.format(limit=-1, most_recent_first=True),
+                ['  File "b.py", line 4', "    <b.py, 4>"],
+            )
 
 
 class TestFilters(unittest.TestCase):
@@ -586,7 +638,9 @@ class TestFilters(unittest.TestCase):
         self.assertEqual(f.all_frames, True)
 
         # parameters passed by keyword
-        f = mprofile.Filter(inclusive=False, filename_pattern="test.py", lineno=123, all_frames=True)
+        f = mprofile.Filter(
+            inclusive=False, filename_pattern="test.py", lineno=123, all_frames=True
+        )
         self.assertEqual(f.inclusive, False)
         self.assertEqual(f.filename_pattern, "test.py")
         self.assertEqual(f.lineno, 123)
@@ -666,73 +720,73 @@ class TestFilters(unittest.TestCase):
             return filter._match_frame(filename, 0)
 
         # empty string
-        self.assertFalse(fnmatch('abc', ''))
-        self.assertFalse(fnmatch('', 'abc'))
-        self.assertTrue(fnmatch('', ''))
-        self.assertTrue(fnmatch('', '*'))
+        self.assertFalse(fnmatch("abc", ""))
+        self.assertFalse(fnmatch("", "abc"))
+        self.assertTrue(fnmatch("", ""))
+        self.assertTrue(fnmatch("", "*"))
 
         # no *
-        self.assertTrue(fnmatch('abc', 'abc'))
-        self.assertFalse(fnmatch('abc', 'abcd'))
-        self.assertFalse(fnmatch('abc', 'def'))
+        self.assertTrue(fnmatch("abc", "abc"))
+        self.assertFalse(fnmatch("abc", "abcd"))
+        self.assertFalse(fnmatch("abc", "def"))
 
         # a*
-        self.assertTrue(fnmatch('abc', 'a*'))
-        self.assertTrue(fnmatch('abc', 'abc*'))
-        self.assertFalse(fnmatch('abc', 'b*'))
-        self.assertFalse(fnmatch('abc', 'abcd*'))
+        self.assertTrue(fnmatch("abc", "a*"))
+        self.assertTrue(fnmatch("abc", "abc*"))
+        self.assertFalse(fnmatch("abc", "b*"))
+        self.assertFalse(fnmatch("abc", "abcd*"))
 
         # a*b
-        self.assertTrue(fnmatch('abc', 'a*c'))
-        self.assertTrue(fnmatch('abcdcx', 'a*cx'))
-        self.assertFalse(fnmatch('abb', 'a*c'))
-        self.assertFalse(fnmatch('abcdce', 'a*cx'))
+        self.assertTrue(fnmatch("abc", "a*c"))
+        self.assertTrue(fnmatch("abcdcx", "a*cx"))
+        self.assertFalse(fnmatch("abb", "a*c"))
+        self.assertFalse(fnmatch("abcdce", "a*cx"))
 
         # a*b*c
-        self.assertTrue(fnmatch('abcde', 'a*c*e'))
-        self.assertTrue(fnmatch('abcbdefeg', 'a*bd*eg'))
-        self.assertFalse(fnmatch('abcdd', 'a*c*e'))
-        self.assertFalse(fnmatch('abcbdefef', 'a*bd*eg'))
+        self.assertTrue(fnmatch("abcde", "a*c*e"))
+        self.assertTrue(fnmatch("abcbdefeg", "a*bd*eg"))
+        self.assertFalse(fnmatch("abcdd", "a*c*e"))
+        self.assertFalse(fnmatch("abcbdefef", "a*bd*eg"))
 
         # replace .pyc suffix with .py
-        self.assertTrue(fnmatch('a.pyc', 'a.py'))
-        self.assertTrue(fnmatch('a.py', 'a.pyc'))
+        self.assertTrue(fnmatch("a.pyc", "a.py"))
+        self.assertTrue(fnmatch("a.py", "a.pyc"))
 
-        if os.name == 'nt':
+        if os.name == "nt":
             # case insensitive
-            self.assertTrue(fnmatch('aBC', 'ABc'))
-            self.assertTrue(fnmatch('aBcDe', 'Ab*dE'))
+            self.assertTrue(fnmatch("aBC", "ABc"))
+            self.assertTrue(fnmatch("aBcDe", "Ab*dE"))
 
-            self.assertTrue(fnmatch('a.pyc', 'a.PY'))
-            self.assertTrue(fnmatch('a.py', 'a.PYC'))
+            self.assertTrue(fnmatch("a.pyc", "a.PY"))
+            self.assertTrue(fnmatch("a.py", "a.PYC"))
         else:
             # case sensitive
-            self.assertFalse(fnmatch('aBC', 'ABc'))
-            self.assertFalse(fnmatch('aBcDe', 'Ab*dE'))
+            self.assertFalse(fnmatch("aBC", "ABc"))
+            self.assertFalse(fnmatch("aBcDe", "Ab*dE"))
 
-            self.assertFalse(fnmatch('a.pyc', 'a.PY'))
-            self.assertFalse(fnmatch('a.py', 'a.PYC'))
+            self.assertFalse(fnmatch("a.pyc", "a.PY"))
+            self.assertFalse(fnmatch("a.py", "a.PYC"))
 
-        if os.name == 'nt':
+        if os.name == "nt":
             # normalize alternate separator "/" to the standard separator "\"
-            self.assertTrue(fnmatch(r'a/b', r'a\b'))
-            self.assertTrue(fnmatch(r'a\b', r'a/b'))
-            self.assertTrue(fnmatch(r'a/b\c', r'a\b/c'))
-            self.assertTrue(fnmatch(r'a/b/c', r'a\b\c'))
+            self.assertTrue(fnmatch(r"a/b", r"a\b"))
+            self.assertTrue(fnmatch(r"a\b", r"a/b"))
+            self.assertTrue(fnmatch(r"a/b\c", r"a\b/c"))
+            self.assertTrue(fnmatch(r"a/b/c", r"a\b\c"))
         else:
             # there is no alternate separator
-            self.assertFalse(fnmatch(r'a/b', r'a\b'))
-            self.assertFalse(fnmatch(r'a\b', r'a/b'))
-            self.assertFalse(fnmatch(r'a/b\c', r'a\b/c'))
-            self.assertFalse(fnmatch(r'a/b/c', r'a\b\c'))
+            self.assertFalse(fnmatch(r"a/b", r"a\b"))
+            self.assertFalse(fnmatch(r"a\b", r"a/b"))
+            self.assertFalse(fnmatch(r"a/b\c", r"a\b/c"))
+            self.assertFalse(fnmatch(r"a/b/c", r"a\b\c"))
 
-        self.assertTrue(fnmatch('a.pyo', 'a.py'))
+        self.assertTrue(fnmatch("a.pyo", "a.py"))
 
     def test_filter_match_trace(self):
         t1 = (("test", "a.py", 1, 2), ("test", "b.py", 1, 3))
         t2 = (("test", "b.py", 1, 4), ("test", "b.py", 1, 5))
-        t3 = (("test", "c.py", 1, 5), ("test", '<unknown>', 0, 0))
-        unknown = (("test", '<unknown>', 0, 0),)
+        t3 = (("test", "c.py", 1, 5), ("test", "<unknown>", 0, 0))
+        unknown = (("test", "<unknown>", 0, 0),)
 
         f = mprofile.Filter(True, "b.py", all_frames=True)
         self.assertTrue(f._match_traceback(t1))
@@ -780,50 +834,56 @@ class TestFilters(unittest.TestCase):
 class TestCommandLine(unittest.TestCase):
     def test_env_var_disabled_by_default(self):
         # not tracing by default
-        code = 'import mprofile; print(mprofile.is_tracing())'
+        code = "import mprofile; print(mprofile.is_tracing())"
         stdout = subprocess.check_output([sys.executable, "-c", code])
         stdout = stdout.rstrip()
-        self.assertEqual(stdout, b'False')
+        self.assertEqual(stdout, b"False")
 
     def test_env_var_enabled_at_startup(self):
         # tracing at startup
-        code = 'import mprofile; print(mprofile.is_tracing())'
-        stdout = subprocess.check_output([sys.executable, "-c", code], env={"MPROFILERATE": "1"})
+        code = "import mprofile; print(mprofile.is_tracing())"
+        stdout = subprocess.check_output(
+            [sys.executable, "-c", code], env={"MPROFILERATE": "1"}
+        )
         stdout = stdout.rstrip()
-        self.assertEqual(stdout, b'True')
+        self.assertEqual(stdout, b"True")
 
     def test_env_limit(self):
         # start and set the number of frames
-        code = 'import mprofile; print(mprofile.get_traceback_limit())'
-        stdout = subprocess.check_output([sys.executable, "-c", code],
-                                         env={"MPROFILERATE": "1", "MPROFILEFRAMES": "10"})
+        code = "import mprofile; print(mprofile.get_traceback_limit())"
+        stdout = subprocess.check_output(
+            [sys.executable, "-c", code],
+            env={"MPROFILERATE": "1", "MPROFILEFRAMES": "10"},
+        )
         stdout = stdout.rstrip()
-        self.assertEqual(stdout, b'10')
+        self.assertEqual(stdout, b"10")
 
     def check_env_var_invalid(self, nframe):
-        code = 'import mprofile; print(mprofile.is_tracing())'
+        code = "import mprofile; print(mprofile.is_tracing())"
         with self.assertRaises(subprocess.CalledProcessError) as cm:
-            subprocess.check_output([sys.executable, "-c", code],
-                                    env={"MPROFILERATE": "1", "MPROFILEFRAMES": str(nframe)},
-                                    stderr=subprocess.STDOUT)
+            subprocess.check_output(
+                [sys.executable, "-c", code],
+                env={"MPROFILERATE": "1", "MPROFILEFRAMES": str(nframe)},
+                stderr=subprocess.STDOUT,
+            )
 
         stdout = cm.exception.output
-        if b'ValueError: the number of frames must be in range' in stdout:
+        if b"ValueError: the number of frames must be in range" in stdout:
             return
-        if b'MPROFILEFRAMES: invalid number of frames' in stdout:
+        if b"MPROFILEFRAMES: invalid number of frames" in stdout:
             return
         self.fail("unexpected output: {}".format(stdout))
-
 
     def test_env_var_invalid(self):
         for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
                 self.check_env_var_invalid(nframe)
 
-    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @unittest.skipIf(_testcapi is None, "need _testcapi")
     def test_pymem_alloc0(self):
         # Issue #21639: Check that PyMem_Malloc(0) with mprofile enabled
         # does not crash.
-        code = 'import _testcapi; _testcapi.test_pymem_alloc0(); 1'
-        stdout = subprocess.check_output([sys.executable, "-c", code],
-                                         env={"MPROFILERATE": "1"})
+        code = "import _testcapi; _testcapi.test_pymem_alloc0(); 1"
+        stdout = subprocess.check_output(
+            [sys.executable, "-c", code], env={"MPROFILERATE": "1"}
+        )

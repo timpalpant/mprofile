@@ -79,5 +79,6 @@ class TestMProfiler(unittest.TestCase):
         self.assertGreaterEqual(stats[0].count, len(snap.traces))
         self.assertGreaterEqual(stats[0].size, sum(t.size for t in snap.traces))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

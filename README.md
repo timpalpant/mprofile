@@ -1,3 +1,9 @@
+[![PyPI](https://img.shields.io/pypi/v/mprofile)](https://pypi.org/project/mprofile/)
+![PyPI - License](https://img.shields.io/pypi/l/mprofile)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mprofile)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/mprofile.svg)](https://pypistats.org/packages/mprofile)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 # mprofile
 
 A low-overhead sampling memory profiler for Python, derived from [heapprof](https://github.com/humu/heapprof), with an interface similar to [tracemalloc](https://pytracemalloc.readthedocs.io).
