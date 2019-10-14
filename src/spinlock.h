@@ -5,23 +5,24 @@
 
 #include <atomic>
 
-// Spinlock is a simple RAII-style wrapper to acquire an atomic flag
-// in a given scope. The flag will be cleared by the destructor.
-class Spinlock {
+// SpinLock is a simple adapter to use an std::atomic_flag
+// with a std::lock_guard.
+class SpinLock {
  public:
-  explicit Spinlock(std::atomic_flag &flag) : flag_(flag) {
+  SpinLock() {}
+  // Not copyable or assignable.
+  SpinLock(const SpinLock &) = delete;
+  SpinLock &operator=(const SpinLock &) = delete;
+
+  void lock() {
     while (flag_.test_and_set(std::memory_order_acquire))
       ;
   }
 
-  ~Spinlock() { flag_.clear(std::memory_order_release); }
-
-  // Not copyable or assignable.
-  Spinlock(const Spinlock &) = delete;
-  Spinlock &operator=(const Spinlock &) = delete;
+  void unlock() { flag_.clear(std::memory_order_release); }
 
  private:
-  std::atomic_flag &flag_;
+  std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
 };
 
 #endif  // MPROFILE_SRC_SPINLOCK_H

@@ -5,7 +5,7 @@
 #define MPROFILE_SRC_HEAP_H_
 
 #include <stdlib.h>
-#include <atomic>
+#include <mutex>
 #include <vector>
 
 #include "third_party/google/tcmalloc/addressmap.h"
@@ -54,7 +54,7 @@ class HeapProfiler {
 
   int max_frames_;
   // Guards access to live_set_.
-  std::atomic_flag flag_ = ATOMIC_FLAG_INIT;
+  SpinLock mu_;
 
   // Map of live pointer -> trace + size of that pointer (if it was sampled).
   // Protected by flag_.
@@ -109,7 +109,7 @@ inline void HeapProfiler::HandleFree(void *ptr) {
   // bit slower and likely not beneficial since Python is mostly
   // single-threaded anyway. The GIL cannot be held in HandleFree because
   // it would introduce a deadlock in PyThreadState_DeleteCurrent().
-  Spinlock lock(flag_);
+  std::lock_guard<SpinLock> lock(mu_);
   LivePointer removed;
   if (UNLIKELY(live_set_.FindAndRemove(ptr, &removed))) {
     total_mem_traced_ -= removed.size;
