@@ -10,14 +10,22 @@ import os.path
 try:
     from mprofile._profiler import *
     from mprofile._profiler import _get_object_traceback, _get_traces
+
+    _ext_available = True
 except ImportError as e:
-    raise ImportError(
-        "Extension module is unavailable, you must use >= 3.4 or apply interpreter patch: %s"
-        % e
-    )
+    _ext_available = False
+
 
 # setup.py reads the version information from here to set package version
 __version__ = "0.0.8"
+
+
+def _assert_ext_available():
+    if not _ext_available:
+        raise RuntimeError(
+            "mprofile: C extension is not available, you must use Python >= 3.4 "
+            + "or a patched interpreter"
+        )
 
 
 def _format_size(size, sign):
@@ -285,6 +293,7 @@ def get_object_traceback(obj):
     Return None if the mprofile module is not tracing memory allocations or
     did not trace the allocation of the object.
     """
+    _assert_ext_available()
     frames = _get_object_traceback(obj)
     if frames:
         return Traceback(frames)
@@ -548,6 +557,7 @@ def take_snapshot():
     """
     Take a snapshot of traces of memory blocks allocated by Python.
     """
+    _assert_ext_available()
     if not is_tracing():
         raise RuntimeError(
             "the mprofile module must be tracing memory "
