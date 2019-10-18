@@ -15,6 +15,9 @@ try:
 except ImportError as e:
     _ext_available = False
 
+    def is_tracing():
+        return False
+
 
 # setup.py reads the version information from here to set package version
 __version__ = "0.0.9"

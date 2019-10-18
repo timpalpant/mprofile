@@ -16,24 +16,30 @@ README = os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md")
 with io.open(README, encoding="utf-8") as f:
     long_description = f.read()
 
+
 def globex(pattern, exclude=[]):
-    return [fn for fn in glob.iglob(pattern)
-            if not any(fnmatch.fnmatch(fn, pattern) for pattern in exclude)]
+    return [
+        fn
+        for fn in glob.iglob(pattern)
+        if not any(fnmatch.fnmatch(fn, pattern) for pattern in exclude)
+    ]
 
 
 define_macros = [("PY_SSIZE_T_CLEAN", None)]
 pythonapi = ctypes.cdll.LoadLibrary(None)
-if not hasattr(pythonapi, 'PyMem_SetAllocator'):
-    print("WARNING: PyMem_SetAllocator: missing, %s has not been patched. " % sys.executable)
+if not hasattr(pythonapi, "PyMem_SetAllocator"):
+    print(
+        "WARNING: PyMem_SetAllocator: missing, %s has not been patched. "
+        % sys.executable
+    )
     define_macros.append(("MPROFILE_PATCH_FORWARD", None))
 
 
 ext = Extension(
     "mprofile._profiler",
     language="c++",
-    sources=globex("src/*.cc", exclude=["*_test.cc", "*_bench.cc"]) + [
-        "third_party/google/tcmalloc/sampler.cc",
-    ],
+    sources=globex("src/*.cc", exclude=["*_test.cc", "*_bench.cc"])
+    + ["third_party/google/tcmalloc/sampler.cc"],
     depends=glob.glob("src/*.h"),
     include_dirs=[os.getcwd(), "src"],
     define_macros=define_macros,
@@ -43,19 +49,19 @@ ext = Extension(
 
 
 def get_version():
-  """Read the version from __init__.py."""
+    """Read the version from __init__.py."""
 
-  with open("mprofile/__init__.py") as fp:
-    # Do not handle exceptions from open() so setup will fail when it cannot
-    # open the file
-    line = fp.read()
-    version = re.search(r'^__version__ = "([0-9]+\.[0-9]+(\.[0-9]+)?-?.*)"',
-                        line, re.M)
-    if version:
-      return version.group(1)
+    with open("mprofile/__init__.py") as fp:
+        # Do not handle exceptions from open() so setup will fail when it cannot
+        # open the file
+        line = fp.read()
+        version = re.search(
+            r'^__version__ = "([0-9]+\.[0-9]+(\.[0-9]+)?-?.*)"', line, re.M
+        )
+        if version:
+            return version.group(1)
 
-  raise RuntimeError(
-      "Cannot determine version from mprofile/__init__.py.")
+    raise RuntimeError("Cannot determine version from mprofile/__init__.py.")
 
 
 setup(
@@ -77,7 +83,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Testing",
-        "Topic :: Software Development :: Libraries :: Python Modules"
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     project_urls={
         "Source": "https://github.com/timpalpant/mprofile",
