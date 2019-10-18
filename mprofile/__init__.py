@@ -17,7 +17,7 @@ except ImportError as e:
 
 
 # setup.py reads the version information from here to set package version
-__version__ = "0.0.8"
+__version__ = "0.0.9"
 
 
 def _assert_ext_available():
