@@ -49,7 +49,7 @@ def get_version():
     # Do not handle exceptions from open() so setup will fail when it cannot
     # open the file
     line = fp.read()
-    version = re.search(r"^__version__ = '([0-9]+\.[0-9]+(\.[0-9]+)?-?.*)'",
+    version = re.search(r'^__version__ = "([0-9]+\.[0-9]+(\.[0-9]+)?-?.*)"',
                         line, re.M)
     if version:
       return version.group(1)
