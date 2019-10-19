@@ -20,7 +20,7 @@ void HeapProfiler::RecordMalloc(void *ptr, size_t size) {
   }
 }
 
-// Callback used to extract all traces from AddressMap into a std::vector.
+// Callback used to extract all pointers from AddressMap into a std::vector.
 template <class Value>
 void AppendToVector(const void *ptr, Value lp, std::vector<const void *> &v) {
   v.push_back(ptr);

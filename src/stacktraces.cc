@@ -70,9 +70,9 @@ const CallTraceSet::TraceHandle CallTraceSet::Intern(const CallTrace &trace) {
   const CallFrame *parent = nullptr;
   // This is a slightly faster path where we try to find each frame, starting
   // from the root, in the interned trace set, but without performing any
-  // string interning. This can have false negatives (same string different
-  // pointer) but not false positives. If we have a false negative it's no
-  // harm because we just proceed a little bit early to the slower path below.
+  // string interning. This is the common case since much of the stack trace
+  // will likely already be interned. Once we fail to find a frame already
+  // in the set, we proceed to add that frame and all descendants below.
   for (int i = trace.size() - 1; i >= 0; i--) {
     CallFrame frame{parent, trace.frames[i]};
     auto it = trace_leaves_.find(frame);

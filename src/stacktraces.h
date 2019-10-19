@@ -52,7 +52,6 @@ struct FuncLoc {
   int lineno __attribute__((packed));
 };
 
-// FuncLoc equality is shallow and assumes the filename and name are interned.
 inline bool operator==(const FuncLoc &lhs, const FuncLoc &rhs) {
   return EqualPyString(lhs.filename, rhs.filename) &&
          EqualPyString(lhs.name, rhs.name) &&

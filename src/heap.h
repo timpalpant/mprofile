@@ -57,7 +57,7 @@ class HeapProfiler {
   SpinLock mu_;
 
   // Map of live pointer -> trace + size of that pointer (if it was sampled).
-  // Protected by flag_.
+  // Protected by mu_.
   AddressMap<LivePointer> live_set_;
   std::size_t total_mem_traced_;
   std::size_t peak_mem_traced_;
