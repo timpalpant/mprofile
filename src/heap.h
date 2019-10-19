@@ -81,6 +81,10 @@ inline void HeapProfiler::HandleMalloc(void *ptr, std::size_t size,
     return;
   }
 
+  // The RAW allocator may be called without the GIL held.
+  // We may increase references to the filename fields in the
+  // code object when we save the trace, so we need to first ensure that
+  // the GIL is held.
   PyGILState_STATE gil_state;
   if (is_raw) {
     gil_state = PyGILState_Ensure();

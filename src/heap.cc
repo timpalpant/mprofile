@@ -1,12 +1,8 @@
 #include "heap.h"
 
 // Records the given pointer and size in the current set of live ptrs,
-// associated with the current stack trace.
+// associated with the current stack trace. The GIL must be held.
 void HeapProfiler::RecordMalloc(void *ptr, size_t size) {
-  // The RAW allocator may be called without the GIL held.
-  // We may increase references to the filename fields in the
-  // code object when we save the trace, so we need to first ensure that
-  // the GIL is held.
   CallTrace trace;
   GetCurrentCallTrace(&trace, max_frames_);
   auto trace_handle = traces_.Intern(trace);
