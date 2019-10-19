@@ -14,7 +14,6 @@ namespace {
 
 // Our global profiler state.
 static std::unique_ptr<HeapProfiler> g_profiler;
-static thread_local bool is_reentrant = false;
 
 #if PY_MAJOR_VERSION >= 3
 #define STRING_INTERN PyUnicode_InternFromString
@@ -40,58 +39,78 @@ struct {
   PY_MEM_ALLOCATOR obj;
 } g_base_allocators;
 
+// The various Python allocators (raw, mem, obj) sometimes delegate to
+// each other, which can result in re-entrant calls to our heap tracer.
+// For example, the PyObject allocator delegates to PyMem allocator to
+// allocate arenas of memory. We only want to trace the outermost call.
+// ReentrantScope is a simple RAII-style scope guard to do this.
+class ReentrantScope {
+ public:
+  ReentrantScope() : is_outer_scope_(!is_active_) {
+    if (is_outer_scope_) {
+      is_active_ = true;
+    }
+  }
+
+  ~ReentrantScope() {
+    if (is_outer_scope_) {
+      is_active_ = false;
+    }
+  }
+
+  bool is_outer_scope() { return is_outer_scope_; }
+
+ private:
+  const bool is_outer_scope_;
+  static thread_local bool is_active_;
+};
+
+thread_local bool ReentrantScope::is_active_ = false;
+
 // The wrapped methods with which we will replace the standard malloc, etc. In
 // each case, ctx will be a pointer to the appropriate base allocator.
 
 void *WrappedMalloc(void *ctx, size_t size) {
-  bool is_outer_scope = !is_reentrant;
-  is_reentrant = true;
+  ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr = alloc->malloc(alloc->ctx, size);
-  if (is_outer_scope) {
+  if (scope.is_outer_scope()) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleMalloc(ptr, size, is_raw);
-    is_reentrant = false;
   }
   return ptr;
 }
 
 #if PY_VERSION_HEX >= 0x03050000
 void *WrappedCalloc(void *ctx, size_t nelem, size_t elsize) {
-  bool is_outer_scope = !is_reentrant;
-  is_reentrant = true;
+  ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr = alloc->calloc(alloc->ctx, nelem, elsize);
-  if (is_outer_scope) {
+  if (scope.is_outer_scope()) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleMalloc(ptr, nelem * elsize, is_raw);
-    is_reentrant = false;
   }
   return ptr;
 }
 #endif
 
 void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
-  bool is_outer_scope = !is_reentrant;
-  is_reentrant = true;
+  ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   void *ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-  if (is_outer_scope) {
+  if (scope.is_outer_scope()) {
     bool is_raw = alloc == &g_base_allocators.raw;
     g_profiler->HandleRealloc(ptr, ptr2, new_size, is_raw);
-    is_reentrant = false;
   }
   return ptr2;
 }
 
 void WrappedFree(void *ctx, void *ptr) {
-  bool is_outer_scope = !is_reentrant;
-  is_reentrant = true;
+  ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
   alloc->free(alloc->ctx, ptr);
-  if (is_outer_scope) {
+  if (scope.is_outer_scope()) {
     g_profiler->HandleFree(ptr);
-    is_reentrant = false;
   }
 }
 
