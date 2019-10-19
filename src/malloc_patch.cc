@@ -108,10 +108,12 @@ void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
 void WrappedFree(void *ctx, void *ptr) {
   ReentrantScope scope;
   PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
-  alloc->free(alloc->ctx, ptr);
+  // Remove from traced set before delegating to actual free to prevent possible
+  // race if memory address is reused.
   if (scope.is_outer_scope()) {
     g_profiler->HandleFree(ptr);
   }
+  alloc->free(alloc->ctx, ptr);
 }
 
 PyObjectRef NewPyTrace(const std::vector<FuncLoc> &trace) {
