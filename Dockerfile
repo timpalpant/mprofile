@@ -28,3 +28,4 @@ ENV SSH=$HOME/openssl
 WORKDIR /
 
 RUN pyenv install 3.7.4
+RUN pyenv install 3.8.2
