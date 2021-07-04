@@ -29,3 +29,4 @@ WORKDIR /
 
 RUN pyenv install 3.7.4
 RUN pyenv install 3.8.2
+RUN pyenv install 3.9.6
