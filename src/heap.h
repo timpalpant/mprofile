@@ -5,15 +5,15 @@
 #define MPROFILE_SRC_HEAP_H_
 
 #include <stdlib.h>
+
 #include <mutex>
 #include <vector>
 
+#include "spinlock.h"
+#include "stacktraces.h"
 #include "third_party/google/tcmalloc/addressmap.h"
 #include "third_party/google/tcmalloc/sampler.h"
 #include "third_party/greg7mdp/parallel-hashmap/phmap.h"
-
-#include "spinlock.h"
-#include "stacktraces.h"
 
 class HeapProfiler {
  public:

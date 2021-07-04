@@ -4,6 +4,7 @@
 #define MPROFILE_SRC_MALLOC_PATCH_H_
 
 #include <Python.h>
+
 #include <memory>
 
 #include "heap.h"

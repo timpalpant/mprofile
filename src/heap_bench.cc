@@ -1,7 +1,6 @@
 // Copyright 2019 Timothy Palpant
 
 #include "benchmark/benchmark.h"
-
 #include "heap.h"
 
 static void BM_HandleMalloc(benchmark::State &state) {

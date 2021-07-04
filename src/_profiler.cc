@@ -3,12 +3,12 @@
 
 #include <cstdlib>
 #include <memory>
-#include "third_party/google/tcmalloc/sampler.h"
 
 #include "heap.h"
 #include "log.h"
 #include "malloc_patch.h"
 #include "scoped_object.h"
+#include "third_party/google/tcmalloc/sampler.h"
 
 namespace {
 

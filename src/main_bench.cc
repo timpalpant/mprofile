@@ -1,6 +1,7 @@
 // Copyright 2019 Timothy Palpant
 
 #include <Python.h>
+
 #include "benchmark/benchmark.h"
 
 int main(int argc, char** argv) {

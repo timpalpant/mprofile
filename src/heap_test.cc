@@ -1,9 +1,10 @@
 // Copyright 2019 Timothy Palpant
 //
-#include "gtest/gtest.h"
+#include "heap.h"
 
 #include <thread>
-#include "heap.h"
+
+#include "gtest/gtest.h"
 
 TEST(HeapProfiler, HandleMalloc) {
   Sampler::SetSamplePeriod(0);

@@ -17,6 +17,7 @@
 #define MPROFILE_SRC_SCOPED_OBJECT_H_
 
 #include <Python.h>
+
 #include <memory>
 
 struct PyObjectDecReffer {

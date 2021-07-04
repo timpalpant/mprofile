@@ -15,6 +15,7 @@
 #include "log.h"
 
 #include <Python.h>
+
 #include <iostream>
 
 void Log(const char *level, const char *fmt, ...) {

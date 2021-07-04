@@ -1,8 +1,8 @@
 // Copyright 2019 Timothy Palpant
-#include "gtest/gtest.h"
-
-#include "scoped_object.h"
 #include "stacktraces.h"
+
+#include "gtest/gtest.h"
+#include "scoped_object.h"
 
 #if PY_MAJOR_VERSION >= 3
 #define STRING_FROMSTRING PyUnicode_FromString
