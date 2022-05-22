@@ -13,19 +13,12 @@
 TEST(FuncLoc, Equal) {
   PyObjectRef filename(STRING_FROMSTRING("file.py"));
   PyObjectRef name(STRING_FROMSTRING("sleep"));
-  FuncLoc f1 = {
-      .filename = filename.get(),
-      .name = name.get(),
-      .firstlineno = 1,
-      .lineno = 3,
-  };
+  FuncLoc f1(filename.get(), name.get(), 1, 3);
 
-  FuncLoc f2 = f1;
-  f2.lineno = 4;
+  FuncLoc f2(f1.filename(), f1.name(), 1, 4);
   FuncLoc f3 = f1;
-  FuncLoc f4 = f1;
   PyObjectRef filename2(STRING_FROMSTRING("file2.py"));
-  f4.filename = filename2.get();
+  FuncLoc f4(filename2.get(), f1.name(), f1.firstlineno(), f1.lineno());
 
   EXPECT_FALSE(f1 == f2);
   EXPECT_TRUE(f1 != f2);
@@ -39,49 +32,44 @@ TEST(CallTrace, PushBack) {
   CallTrace trace{};
   EXPECT_EQ(trace.size(), 0);
 
-  trace.push_back(FuncLoc{});
+  trace.push_back(FuncLoc());
   EXPECT_EQ(trace.size(), 1);
-  trace.push_back(FuncLoc{});
+  trace.push_back(FuncLoc());
   EXPECT_EQ(trace.size(), 2);
 }
 
 TEST(CallTraceSet, Intern) {
   PyObjectRef filename1(STRING_FROMSTRING("file1.py"));
   PyObjectRef name1(STRING_FROMSTRING("do_stuff"));
-  FuncLoc f1 = {
-      .filename = filename1.get(),
-      .name = name1.get(),
-      .firstlineno = 3,
-      .lineno = 4,
-  };
+  FuncLoc f1(filename1.get(), name1.get(), 3, 4);
 
   PyObjectRef filename2(STRING_FROMSTRING("file2.py"));
   PyObjectRef name2(STRING_FROMSTRING("sleep"));
-  FuncLoc f2 = {
-      .filename = filename2.get(),
-      .name = name2.get(),
-      .firstlineno = 7,
-      .lineno = 8,
-  };
+  FuncLoc f2(filename2.get(), name2.get(), 7, 8);
 
   PyObjectRef filename3(STRING_FROMSTRING("file2.py"));
   PyObjectRef name3(STRING_FROMSTRING("main"));
-  FuncLoc f3 = {
-      .filename = filename3.get(),
-      .name = name3.get(),
-      .firstlineno = 11,
-      .lineno = 12,
-  };
+  FuncLoc f3(filename3.get(), name3.get(), 11, 12);
 
   // f2 but reusing the (interned) filename string from f3.
-  FuncLoc f2a = f2;
-  f2a.filename = f3.filename;
+  FuncLoc f2a(f3.filename(), f2.name(), f2.firstlineno(), f2.lineno());
 
-  CallTrace trace1 = {{f1, f2, f3}, 3};
-  CallTrace trace2 = {{f1, f2, f3}, 3};
-  CallTrace trace3 = {{f2, f3}, 2};
-  CallTrace trace4 = {{f1, f2}, 2};
-  CallTrace trace5 = {{f3}, 1};
+  CallTrace trace1;
+  trace1.push_back(f1);
+  trace1.push_back(f2);
+  trace1.push_back(f3);
+  CallTrace trace2;
+  trace2.push_back(f1);
+  trace2.push_back(f2);
+  trace2.push_back(f3);
+  CallTrace trace3;
+  trace3.push_back(f2);
+  trace3.push_back(f3);
+  CallTrace trace4;
+  trace4.push_back(f1);
+  trace4.push_back(f2);
+  CallTrace trace5;
+  trace5.push_back(f3);
 
   CallTraceSet cts;
   auto handle1 = cts.Intern(trace1);

@@ -126,8 +126,8 @@ PyObjectRef NewPyTrace(const std::vector<FuncLoc> &trace) {
 
   for (std::size_t i = 0; i < trace.size(); i++) {
     const FuncLoc &loc = trace[i];
-    PyObject *py_frame = Py_BuildValue("(OOii)", loc.name, loc.filename,
-                                       loc.firstlineno, loc.lineno);
+    PyObject *py_frame = Py_BuildValue("(OOii)", loc.name(), loc.filename(),
+                                       loc.firstlineno(), loc.lineno());
     if (py_frame == nullptr) {
       return nullptr;
     }
@@ -170,10 +170,7 @@ PyObjectRef NewPyTraces(const std::vector<const void *> &snap) {
     if (trace.size() == 0) {
       unknown_filename.reset(STRING_INTERN("<unknown>"));
       unknown_name.reset(STRING_INTERN("[Unknown - No Python thread state]"));
-      trace.push_back({
-          .filename = unknown_filename.get(),
-          .name = unknown_name.get(),
-      });
+      trace.emplace_back(unknown_filename.get(), unknown_name.get(), 0, 0);
     }
 
     PyObjectRef py_frames(NewPyTrace(trace));
