@@ -24,8 +24,7 @@ cc_test(
     srcs = glob(["*_test.cc"]),
     copts = COPTS,
     linkopts = select({
-        "@local_config_python//:python2": ["-ldl", "-lpthread", "-lpython2.7", "-lrt"],
-        "@local_config_python//:python3": ["-ldl", "-lpthread", "-lpython3.9", "-lrt"],
+        "@local_config_python//:python3": ["-ldl", "-lpthread", "-lpython3.10", "-lrt"],
         "//conditions:default": ["not-existing.headers"],
     }),
     deps = [
@@ -39,8 +38,7 @@ cc_test(
     srcs = glob(["*_bench.cc"]),
     copts = COPTS + ["-O3"],
     linkopts = select({
-        "@local_config_python//:python2": ["-ldl", "-lpthread", "-lpython2.7", "-lrt"],
-        "@local_config_python//:python3": ["-ldl", "-lpthread", "-lpython3.9", "-lrt"],
+        "@local_config_python//:python3": ["-ldl", "-lpthread", "-lpython3.10", "-lrt"],
         "//conditions:default": ["not-existing.headers"],
     }),
     deps = [

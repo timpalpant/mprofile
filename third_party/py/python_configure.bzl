@@ -1,15 +1,7 @@
 # Adapted with modifications from tensorflow/third_party/py/
-"""Repository rule for Python autoconfiguration.
-
-`python_configure` depends on the following environment variables:
-
-  * `PYTHON2_BIN_PATH`: location of python binary.
-  * `PYTHON2_LIB_PATH`: Location of python libraries.
-"""
+"""Repository rule for Python autoconfiguration."""
 
 _BAZEL_SH = "BAZEL_SH"
-_PYTHON2_BIN_PATH = "PYTHON2_BIN_PATH"
-_PYTHON2_LIB_PATH = "PYTHON2_LIB_PATH"
 _PYTHON3_BIN_PATH = "PYTHON3_BIN_PATH"
 _PYTHON3_LIB_PATH = "PYTHON3_LIB_PATH"
 
@@ -184,8 +176,8 @@ def _get_python_lib(repository_ctx, python_bin, lib_path_key):
         "  python_paths = os.getenv('PYTHONPATH').split(':')\n" + "try:\n" +
         "  library_paths = site.getsitepackages()\n" +
         "except AttributeError:\n" +
-        " from distutils.sysconfig import get_python_lib\n" +
-        " library_paths = [get_python_lib()]\n" +
+        " import sysconfig\n" +
+        " library_paths = [sysconfig.get_path('stdlib')]\n" +
         "all_paths = set(python_paths + library_paths)\n" + "paths = []\n" +
         "for path in all_paths:\n" + "  if os.path.isdir(path):\n" +
         "    paths.append(path)\n" + "if len(paths) >=1:\n" +
@@ -216,9 +208,9 @@ def _get_python_include(repository_ctx, python_bin):
     """Gets the python include path."""
     result = _execute(
         repository_ctx, [
-            python_bin, "-c", 'from __future__ import print_function;' +
-            'from distutils import sysconfig;' +
-            'print(sysconfig.get_python_inc())'
+            python_bin, "-c", "from __future__ import print_function;" +
+            "import sysconfig;" +
+            "print(sysconfig.get_path('include'))"
         ],
         error_msg="Problem getting python include path.",
         error_details=(
@@ -279,11 +271,6 @@ def _create_single_version_package(repository_ctx,
 def _python_autoconf_impl(repository_ctx):
     """Implementation of the python_autoconf repository rule."""
     _create_single_version_package(repository_ctx,
-                                   "_python2",
-                                   _PYTHON2_BIN_PATH,
-                                   "python",
-                                   _PYTHON2_LIB_PATH)
-    _create_single_version_package(repository_ctx,
                                    "_python3",
                                    _PYTHON3_BIN_PATH,
                                    "python3",
@@ -295,8 +282,6 @@ python_configure = repository_rule(
     implementation = _python_autoconf_impl,
     environ = [
         _BAZEL_SH,
-        _PYTHON2_BIN_PATH,
-        _PYTHON2_LIB_PATH,
         _PYTHON3_BIN_PATH,
         _PYTHON3_LIB_PATH,
     ],
