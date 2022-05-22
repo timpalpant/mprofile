@@ -2,5 +2,5 @@
 
 set -exuo pipefail
 
-docker build -t pypprof:latest .
-docker run -it -v `pwd`:/src pypprof:latest /src/build_wheels.sh
+python3 setup.py sdist
+docker run -it -v `pwd`:/src -e PLAT=manylinux2014_x86_64 quay.io/pypa/manylinux2014_x86_64 /src/build_wheels.sh
