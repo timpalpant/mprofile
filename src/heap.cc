@@ -7,6 +7,12 @@ void HeapProfiler::RecordMalloc(void *ptr, size_t size) {
   GetCurrentCallTrace(&trace, max_frames_);
   auto trace_handle = traces_.Intern(trace);
 
+  for (int i = 0; i < trace.size(); i++) {
+    const FuncLoc& loc = trace.frames[i];
+    Py_XDECREF(loc.filename);
+    Py_XDECREF(loc.name);
+  }
+
   std::lock_guard<SpinLock> lock(mu_);
   LivePointer lp = {trace_handle, size};
   live_set_.Insert(ptr, lp);

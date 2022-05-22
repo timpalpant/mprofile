@@ -82,7 +82,14 @@ struct CallTrace {
 // Extract the current call stack trace for this Python thread.
 // Populate the result in the first N frames of the provided CallTrace, up to
 // max_frames.
+//
+// Note: The CallTrace is populated with strong references to the
+// filename and name in the FuncLoc objects. The caller is responsible
+// for freeing these by calling FreeCallTrace().
 void GetCurrentCallTrace(CallTrace *trace, int max_frames);
+
+// Free any references in the given CallTrace.
+void FreeCallTrace(CallTrace *trace);
 
 // CallTraceSet maintains an interned set of call traces, allowing
 // for O(1) lookup while also minimizing memory usage.

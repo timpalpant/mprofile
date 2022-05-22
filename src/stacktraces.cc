@@ -21,16 +21,20 @@
 
 namespace {
 
-bool SkipFrame(PyFrameObject *pyframe) {
+bool SkipFrame(PyCodeObject *f_code) {
+  if (f_code == nullptr) {
+    return true;
+  }
+
   // If the filename begins with a <, skip it.
   // These are typically frames from the importer machinery, and for
   // import-time allocations make the stacks 3x as large.
 #if PY_MAJOR_VERSION >= 3
   const Py_UCS4 first_char =
-      PyUnicode_READ_CHAR(pyframe->f_code->co_filename, 0);
+      PyUnicode_READ_CHAR(f_code->co_filename, 0);
   return (first_char == 0x3c);
 #else
-  const char *first_char = PyString_AsString(pyframe->f_code->co_filename);
+  const char *first_char = PyString_AsString(f_code->co_filename);
   return (first_char != nullptr && *first_char == 0x3c);
 #endif
 }
@@ -44,24 +48,54 @@ void GetCurrentCallTrace(CallTrace *trace, int max_frames) {
   }
 
   PyThreadState *ts = PyGILState_GetThisThreadState();
-  if (ts != nullptr) {
-    PyFrameObject *pyframe = ts->frame;
-    while (pyframe != nullptr && trace->size() < max_frames) {
-      if (SkipFrame(pyframe)) {
-        pyframe = pyframe->f_back;
-        continue;
-      }
+  if (ts == nullptr) {
+    return;
+  }
 
-      const PyCodeObject *code = pyframe->f_code;
+#if PY_VERSION_HEX >= 0x030900B1
+  PyFrameObject *pyframe = PyThreadState_GetFrame(ts);
+#else
+  PyFrameObject *pyframe = ts->frame;
+#endif
+
+  while (pyframe != nullptr && trace->size() < max_frames) {
+#if PY_VERSION_HEX >= 0x030900B1
+    PyCodeObject *f_code = PyFrame_GetCode(pyframe);
+#else
+    PyCodeObject *f_code = pyframe->f_code;
+#endif
+
+    if (!SkipFrame(f_code)) {
+      Py_XINCREF(f_code->co_filename);
+      Py_XINCREF(f_code->co_name);
       trace->push_back(FuncLoc{
-          .filename = code->co_filename,
-          .name = code->co_name,
-          .firstlineno = code->co_firstlineno,
-          .lineno = PyFrame_GetLineNumber(pyframe),
+        .filename = f_code->co_filename,
+        .name = f_code->co_name,
+        .firstlineno = f_code->co_firstlineno,
+        .lineno = PyFrame_GetLineNumber(pyframe)
       });
-
-      pyframe = pyframe->f_back;
     }
+
+#if PY_VERSION_HEX >= 0x030900B1
+    PyFrameObject *prev_frame = pyframe;
+    pyframe = PyFrame_GetBack(pyframe);
+    Py_XDECREF(f_code);
+    Py_XDECREF(prev_frame);
+#else
+    pyframe = pyframe->f_back;
+#endif
+  }
+
+#if PY_VERSION_HEX >= 0x030900B1
+  Py_XDECREF(pyframe);
+#endif
+}
+
+void FreeCallTrace(const CallTrace &trace) {
+  for (int i = 0; i < trace.size(); i++) {
+    const FuncLoc& loc = trace.frames[i];
+    Py_XDECREF(loc.filename);
+    Py_XDECREF(loc.name);
   }
 }
 
