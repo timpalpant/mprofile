@@ -1,5 +1,9 @@
 # This file is largely adapted from tracemalloc.
-from collections import Sequence, Iterable
+try:
+    from collections.abc import Iterable, Sequence  # noqa
+except ImportError:
+    from collections import Iterable, Sequence  # noqa
+
 import fnmatch
 from functools import total_ordering
 import linecache
