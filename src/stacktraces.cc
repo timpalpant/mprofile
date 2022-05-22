@@ -21,20 +21,16 @@
 
 namespace {
 
-bool SkipFrame(PyCodeObject *f_code) {
-  if (f_code == nullptr) {
-    return true;
-  }
-
+bool SkipFrame(PyFrameObject *pyframe) {
   // If the filename begins with a <, skip it.
   // These are typically frames from the importer machinery, and for
   // import-time allocations make the stacks 3x as large.
 #if PY_MAJOR_VERSION >= 3
   const Py_UCS4 first_char =
-      PyUnicode_READ_CHAR(f_code->co_filename, 0);
+      PyUnicode_READ_CHAR(pyframe->f_code->co_filename, 0);
   return (first_char == 0x3c);
 #else
-  const char *first_char = PyString_AsString(f_code->co_filename);
+  const char *first_char = PyString_AsString(pyframe->f_code->co_filename);
   return (first_char != nullptr && *first_char == 0x3c);
 #endif
 }
@@ -48,45 +44,25 @@ void GetCurrentCallTrace(CallTrace *trace, int max_frames) {
   }
 
   PyThreadState *ts = PyGILState_GetThisThreadState();
-  if (ts == nullptr) {
-    return;
-  }
+  if (ts != nullptr) {
+    PyFrameObject *pyframe = ts->frame;
+    while (pyframe != nullptr && trace->size() < max_frames) {
+      if (SkipFrame(pyframe)) {
+        pyframe = pyframe->f_back;
+        continue;
+      }
 
-#if PY_VERSION_HEX >= 0x030900B1
-  PyFrameObject *pyframe = PyThreadState_GetFrame(ts);
-#else
-  PyFrameObject *pyframe = ts->frame;
-#endif
+      const PyCodeObject *code = pyframe->f_code;
+      trace->push_back(FuncLoc{
+          .filename = code->co_filename,
+          .name = code->co_name,
+          .firstlineno = code->co_firstlineno,
+          .lineno = PyFrame_GetLineNumber(pyframe),
+      });
 
-  while (pyframe != nullptr && trace->size() < max_frames) {
-#if PY_VERSION_HEX >= 0x030900B1
-    PyCodeObject *f_code = PyFrame_GetCode(pyframe);
-#else
-    PyCodeObject *f_code = pyframe->f_code;
-#endif
-
-    if (!SkipFrame(f_code)) {
-      trace->push_back(FuncLoc(
-        f_code->co_filename,
-        f_code->co_name,
-        f_code->co_firstlineno,
-        PyFrame_GetLineNumber(pyframe)
-      ));
+      pyframe = pyframe->f_back;
     }
-
-#if PY_VERSION_HEX >= 0x030900B1
-    PyFrameObject *prev_frame = pyframe;
-    pyframe = PyFrame_GetBack(pyframe);
-    Py_XDECREF(f_code);
-    Py_XDECREF(prev_frame);
-#else
-    pyframe = pyframe->f_back;
-#endif
   }
-
-#if PY_VERSION_HEX >= 0x030900B1
-  Py_XDECREF(pyframe);
-#endif
 }
 
 const CallTraceSet::TraceHandle CallTraceSet::Intern(const CallTrace &trace) {
@@ -114,12 +90,11 @@ const CallTraceSet::TraceHandle CallTraceSet::Intern(const CallTrace &trace) {
   // In the case where num_to_intern == 0, then this is skipped and we
   // already have in parent a pointer to the interned leaf.
   for (int i = num_to_intern - 1; i >= 0; i--) {
-    const FuncLoc& loc = trace.frames[i];
-    PyObject *interned_filename = InternString(loc.filename());
-    PyObject *interned_name = InternString(loc.name());
-    FuncLoc interned_loc(interned_filename, interned_name, loc.firstlineno(), loc.lineno());
+    FuncLoc loc = trace.frames[i];
+    loc.filename = InternString(loc.filename);
+    loc.name = InternString(loc.name);
 
-    CallFrame frame{parent, interned_loc};
+    CallFrame frame{parent, loc};
     auto it = trace_leaves_.emplace(frame);
     parent = &(*it.first);
   }

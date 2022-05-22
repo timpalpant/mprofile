@@ -37,74 +37,26 @@ inline bool EqualPyString(PyObject *p1, PyObject *p2) {
 // FuncLoc captures the location of execution within a function.
 // The info is extracted from the current Python stack frames.
 // Struct is packed to reduce memory usage from 32 to 24 bytes.
-class FuncLoc {
- public:
-  FuncLoc(PyObject *filename, PyObject *name, int firstlineno, int lineno)
-    : filename_{filename}, name_{name}, firstlineno_{firstlineno}, lineno_{lineno} {
-      Py_XINCREF(filename_);
-      Py_XINCREF(name_);
-  }
-
-  FuncLoc() : FuncLoc(nullptr, nullptr, 0, 0) {}
-
-  ~FuncLoc() {
-    Py_XDECREF(filename_);
-    Py_XDECREF(name_);
-  }
-
-  FuncLoc(const FuncLoc &other)
-    : FuncLoc(other.filename_, other.name_, other.firstlineno_, other.lineno_) {}
-
-  FuncLoc &operator=(const FuncLoc &other) {
-    Py_XINCREF(other.filename_);
-    filename_ = other.filename_;
-    Py_XINCREF(other.name_);
-    name_ = other.name_;
-    firstlineno_ = other.firstlineno_;
-    lineno_ = other.lineno_;
-    return *this;
-  }
-
-  // Note: Returns a borrowed reference,
-  // does not increase the reference count.
-  PyObject *filename() const {
-    return filename_;
-  }
-
-  // Note: Returns a borrowed reference,
-  // does not increase the reference count.
-  PyObject *name() const {
-    return name_;
-  }
-
-  int firstlineno() const {
-    return firstlineno_;
-  }
-
-  int lineno() const {
-    return lineno_;
-  }
-
-private:
+struct FuncLoc {
   // Filename in which this call frame function is defined.
-  PyObject *filename_;
+  PyObject *filename;
   // The function name of this call frame.
-  PyObject *name_;
+  PyObject *name;
   // The line number on which this call frame function is defined.
   // We keep this in addition to lineno for two reasons:
   //   1) It's basically free in memory since we pack the struct.
   //   2) Function names are not unique in a file, for instance there will
   //      be multiple __init__ for each class and this allows us to easily
   //      disambiguate them.
-  int firstlineno_ __attribute__((packed));
+  int firstlineno __attribute__((packed));
   // The line number within the file which is currently executing.
-  int lineno_ __attribute__((packed));
+  int lineno __attribute__((packed));
 };
 
 inline bool operator==(const FuncLoc &lhs, const FuncLoc &rhs) {
-  return EqualPyString(lhs.filename(), rhs.filename()) &&
-         EqualPyString(lhs.name(), rhs.name()) &&
-         lhs.firstlineno() == rhs.firstlineno() && lhs.lineno() == rhs.lineno();
+  return EqualPyString(lhs.filename, rhs.filename) &&
+         EqualPyString(lhs.name, rhs.name) &&
+         lhs.firstlineno == rhs.firstlineno && lhs.lineno == rhs.lineno;
 }
 
 inline bool operator!=(const FuncLoc &lhs, const FuncLoc &rhs) {
@@ -121,7 +73,7 @@ const int kMaxFramesToCapture = 128;
 // traces on the stack when recording an allocation.
 struct CallTrace {
   std::array<FuncLoc, kMaxFramesToCapture> frames;
-  int num_frames{};
+  int num_frames;
 
   void push_back(FuncLoc loc) { frames[num_frames++] = loc; }
   int size() const { return num_frames; }
@@ -188,7 +140,7 @@ class CallTraceSet {
     std::size_t operator()(const CallFrame &frame) const {
       const FuncLoc &loc = frame.loc;
       return phmap::HashState().combine(
-          0, loc.filename(), loc.name(), loc.firstlineno(), loc.lineno(), frame.parent);
+          0, loc.filename, loc.name, loc.firstlineno, loc.lineno, frame.parent);
     }
   };
 
