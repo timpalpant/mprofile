@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 for PYBIN in /opt/python/*/bin; do
-  if [[ "$PYBIN" == *cp311* ]] || [[ "$PYBIN" == *pypy* ]]; then
+  if [[ "$PYBIN" == *pypy* ]]; then
     continue
   fi
 
