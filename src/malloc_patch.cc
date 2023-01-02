@@ -4,9 +4,6 @@
 #include "malloc_patch.h"
 
 #include <Python.h>
-#ifdef MPROFILE_PATCH_FORWARD
-#include "pep445.h"
-#endif
 
 #include "scoped_object.h"
 
@@ -15,28 +12,14 @@ namespace {
 // Our global profiler state.
 static std::unique_ptr<HeapProfiler> g_profiler;
 
-#if PY_MAJOR_VERSION >= 3
-#define STRING_INTERN PyUnicode_InternFromString
-#else
-#define STRING_INTERN PyString_InternFromString
-#endif
-
-// Changed in version 3.5: The PyMemAllocator structure was renamed to
-// PY_MEM_ALLOCATOR and a new calloc field was added.
-#if PY_VERSION_HEX >= 0x03050000
-#define PY_MEM_ALLOCATOR PyMemAllocatorEx
-#else
-#define PY_MEM_ALLOCATOR PyMemAllocator
-#endif
-
 // The underlying allocators that we're going to wrap. This gets filled in with
 // meaningful content during AttachProfiler.
 //
 // Protected by the GIL, which must be held to call AttachProfiler.
 struct {
-  PY_MEM_ALLOCATOR raw;
-  PY_MEM_ALLOCATOR mem;
-  PY_MEM_ALLOCATOR obj;
+  PyMemAllocatorEx raw;
+  PyMemAllocatorEx mem;
+  PyMemAllocatorEx obj;
 } g_base_allocators;
 
 // The various Python allocators (raw, mem, obj) sometimes delegate to
@@ -72,7 +55,7 @@ thread_local bool ReentrantScope::is_active_ = false;
 
 void *WrappedMalloc(void *ctx, size_t size) {
   ReentrantScope scope;
-  PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
+  PyMemAllocatorEx *alloc = reinterpret_cast<PyMemAllocatorEx *>(ctx);
   void *ptr = alloc->malloc(alloc->ctx, size);
   if (scope.is_outer_scope()) {
     bool is_raw = alloc == &g_base_allocators.raw;
@@ -81,10 +64,9 @@ void *WrappedMalloc(void *ctx, size_t size) {
   return ptr;
 }
 
-#if PY_VERSION_HEX >= 0x03050000
 void *WrappedCalloc(void *ctx, size_t nelem, size_t elsize) {
   ReentrantScope scope;
-  PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
+  PyMemAllocatorEx *alloc = reinterpret_cast<PyMemAllocatorEx *>(ctx);
   void *ptr = alloc->calloc(alloc->ctx, nelem, elsize);
   if (scope.is_outer_scope()) {
     bool is_raw = alloc == &g_base_allocators.raw;
@@ -92,11 +74,10 @@ void *WrappedCalloc(void *ctx, size_t nelem, size_t elsize) {
   }
   return ptr;
 }
-#endif
 
 void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
   ReentrantScope scope;
-  PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
+  PyMemAllocatorEx *alloc = reinterpret_cast<PyMemAllocatorEx *>(ctx);
   void *ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
   if (scope.is_outer_scope()) {
     bool is_raw = alloc == &g_base_allocators.raw;
@@ -107,7 +88,7 @@ void *WrappedRealloc(void *ctx, void *ptr, size_t new_size) {
 
 void WrappedFree(void *ctx, void *ptr) {
   ReentrantScope scope;
-  PY_MEM_ALLOCATOR *alloc = reinterpret_cast<PY_MEM_ALLOCATOR *>(ctx);
+  PyMemAllocatorEx *alloc = reinterpret_cast<PyMemAllocatorEx *>(ctx);
   // Remove from traced set before delegating to actual free to prevent possible
   // race if memory address is reused.
   if (scope.is_outer_scope()) {
@@ -145,10 +126,8 @@ PyObjectRef NewPyTrace(const std::vector<FuncLoc> &trace) {
 }
 
 PyObjectRef NewPyTraces(const std::vector<const void *> &snap) {
-#if PY_MAJOR_VERSION >= 3
   // Asserts that GIL is held in debug mode.
   assert(PyGILState_Check());
-#endif
 
   PyObjectRef py_traces(PyTuple_New(snap.size()));
   if (py_traces == nullptr) {
@@ -168,8 +147,8 @@ PyObjectRef NewPyTraces(const std::vector<const void *> &snap) {
     PyObjectRef unknown_filename;
     PyObjectRef unknown_name;
     if (trace.size() == 0) {
-      unknown_filename.reset(STRING_INTERN("<unknown>"));
-      unknown_name.reset(STRING_INTERN("[Unknown - No Python thread state]"));
+      unknown_filename.reset(PyUnicode_InternFromString("<unknown>"));
+      unknown_name.reset(PyUnicode_InternFromString("[Unknown - No Python thread state]"));
       trace.push_back({
           .filename = unknown_filename.get(),
           .name = unknown_name.get(),
@@ -214,11 +193,9 @@ PyObjectRef NewPyTraces(const std::vector<const void *> &snap) {
 void AttachHeapProfiler(std::unique_ptr<HeapProfiler> profiler) {
   g_profiler = std::move(profiler);
 
-  PY_MEM_ALLOCATOR alloc;
+  PyMemAllocatorEx alloc;
   alloc.malloc = WrappedMalloc;
-#if PY_VERSION_HEX >= 0x03050000
   alloc.calloc = WrappedCalloc;
-#endif
   alloc.realloc = WrappedRealloc;
   alloc.free = WrappedFree;
 
@@ -284,10 +261,8 @@ void ResetHeapProfiler() {
     return;
   }
 
-#if PY_MAJOR_VERSION >= 3
   // Asserts that GIL is held in debug mode.
   assert(PyGILState_Check());
-#endif
 
   g_profiler->Reset();
 }

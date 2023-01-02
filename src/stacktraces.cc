@@ -29,14 +29,9 @@ bool SkipFrame(PyCodeObject *f_code) {
   // If the filename begins with a <, skip it.
   // These are typically frames from the importer machinery, and for
   // import-time allocations make the stacks 3x as large.
-#if PY_MAJOR_VERSION >= 3
   const Py_UCS4 first_char =
       PyUnicode_READ_CHAR(f_code->co_filename, 0);
   return (first_char == 0x3c);
-#else
-  const char *first_char = PyString_AsString(f_code->co_filename);
-  return (first_char != nullptr && *first_char == 0x3c);
-#endif
 }
 
 }  // namespace

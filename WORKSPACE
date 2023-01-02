@@ -45,15 +45,15 @@ rules_proto_toolchains()
 # GoogleTest/GoogleMock framework. Used by most unit-tests.
 http_archive(
     name = "com_github_google_googletest",
-    urls = ["https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip"],  # 2019-01-07
-    strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
-    sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
+    urls = ["https://github.com/google/googletest/archive/refs/tags/release-1.12.1.tar.gz"],
+    strip_prefix = "googletest-release-1.12.1",
+    sha256 = "81964fe578e9bd7c94dfdb09c8e4d6e6759e19967e397dbea48d1c10e45d0df2",
 )
 
 # Google benchmark.
 http_archive(
     name = "com_github_google_benchmark",
-    urls = ["https://github.com/google/benchmark/archive/refs/tags/v1.6.1.tar.gz"],
-    strip_prefix = "benchmark-1.6.1",
-    sha256 = "6132883bc8c9b0df5375b16ab520fac1a85dc9e4cf5be59480448ece74b278d4",
+    urls = ["https://github.com/google/benchmark/archive/refs/tags/v1.7.1.tar.gz"],
+    strip_prefix = "benchmark-1.7.1",
+    sha256 = "6430e4092653380d9dc4ccb45a1e2dc9259d581f4866dc0759713126056bc1d7",
 )

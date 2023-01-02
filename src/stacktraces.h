@@ -27,11 +27,7 @@ inline bool EqualPyString(PyObject *p1, PyObject *p2) {
     return true;
   }
 
-#if PY_MAJOR_VERSION >= 3
   return PyUnicode_Compare(p1, p2) == 0;
-#else
-  return _PyString_Eq(p1, p2) == 1;
-#endif
 }
 
 // FuncLoc captures the location of execution within a function.

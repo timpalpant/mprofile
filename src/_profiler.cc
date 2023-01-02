@@ -12,14 +12,6 @@
 
 namespace {
 
-#if PY_MAJOR_VERSION >= 3
-#define INT_FROM_LONG PyLong_FromLong
-#define INT_FROM_SIZE_T PyLong_FromSize_t
-#else
-#define INT_FROM_LONG PyInt_FromLong
-#define INT_FROM_SIZE_T PyInt_FromSize_t
-#endif
-
 bool StartProfilerWithParams(uint64_t max_frames, uint64_t sample_rate) {
   if (IsHeapProfilerAttached()) {
     PyErr_SetString(PyExc_RuntimeError, "The profiler is already running.");
@@ -81,17 +73,17 @@ PyObject *ClearTraces(PyObject *self, PyObject *args) {
 
 PyObject *GetTracemallocMemory(PyObject *self, PyObject *args) {
   if (!IsHeapProfilerAttached()) {
-    return INT_FROM_LONG(0);
+    return PyLong_FromLong(0);
   }
 
   std::size_t mem_usage = GetHeapProfilerMemUsage();
-  return INT_FROM_SIZE_T(mem_usage);
+  return PyLong_FromSize_t(mem_usage);
 }
 
 PyObject *GetTracedMemory(PyObject *self, PyObject *args) {
   std::pair<std::size_t, std::size_t> mem_usage = GetHeapProfilerTracedMemory();
-  PyObject *size_obj = INT_FROM_SIZE_T(mem_usage.first);
-  PyObject *peak_size_obj = INT_FROM_SIZE_T(mem_usage.second);
+  PyObject *size_obj = PyLong_FromSize_t(mem_usage.first);
+  PyObject *peak_size_obj = PyLong_FromSize_t(mem_usage.second);
   return Py_BuildValue("NN", size_obj, peak_size_obj);
 }
 
@@ -109,7 +101,7 @@ PyObject *GetSampleRate(PyObject *self, PyObject *args) {
     return nullptr;
   }
 
-  return INT_FROM_LONG(Sampler::GetSamplePeriod());
+  return PyLong_FromLong(Sampler::GetSamplePeriod());
 }
 
 PyObject *GetTracebackLimit(PyObject *self, PyObject *args) {
@@ -118,7 +110,7 @@ PyObject *GetTracebackLimit(PyObject *self, PyObject *args) {
     max_frames = GetMaxFrames();
   }
 
-  return INT_FROM_LONG(max_frames);
+  return PyLong_FromLong(max_frames);
 }
 
 PyObject *GetObjectTraceback(PyObject *self, PyObject *args) {
@@ -239,12 +231,11 @@ PyMethodDef ProfilerMethods[] = {
     {nullptr, nullptr, 0, nullptr} /* Sentinel */
 };
 
-#if PY_MAJOR_VERSION >= 3
 struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT, "_profiler", /* name of module */
     "mprofile C++ extension module",    /* module documentation */
     -1, ProfilerMethods};
-}  // namespace
+} // namespace
 
 PyMODINIT_FUNC PyInit__profiler(void) {
   PyObject *m = PyModule_Create(&moduledef);
@@ -258,15 +249,3 @@ PyMODINIT_FUNC PyInit__profiler(void) {
 
   return m;
 }
-#else
-}  // namespace
-
-PyMODINIT_FUNC init_profiler(void) {
-  PyObject *m = Py_InitModule("_profiler", ProfilerMethods);
-  if (m == nullptr) {
-    return;
-  }
-
-  MProfileInit(m);
-}
-#endif

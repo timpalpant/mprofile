@@ -4,15 +4,9 @@
 #include "gtest/gtest.h"
 #include "scoped_object.h"
 
-#if PY_MAJOR_VERSION >= 3
-#define STRING_FROMSTRING PyUnicode_FromString
-#else
-#define STRING_FROMSTRING PyString_FromString
-#endif
-
 TEST(FuncLoc, Equal) {
-  PyObjectRef filename(STRING_FROMSTRING("file.py"));
-  PyObjectRef name(STRING_FROMSTRING("sleep"));
+  PyObjectRef filename(PyUnicode_FromString("file.py"));
+  PyObjectRef name(PyUnicode_FromString("sleep"));
   FuncLoc f1 = {
       .filename = filename.get(),
       .name = name.get(),
@@ -24,7 +18,7 @@ TEST(FuncLoc, Equal) {
   f2.lineno = 4;
   FuncLoc f3 = f1;
   FuncLoc f4 = f1;
-  PyObjectRef filename2(STRING_FROMSTRING("file2.py"));
+  PyObjectRef filename2(PyUnicode_FromString("file2.py"));
   f4.filename = filename2.get();
 
   EXPECT_FALSE(f1 == f2);
@@ -46,8 +40,8 @@ TEST(CallTrace, PushBack) {
 }
 
 TEST(CallTraceSet, Intern) {
-  PyObjectRef filename1(STRING_FROMSTRING("file1.py"));
-  PyObjectRef name1(STRING_FROMSTRING("do_stuff"));
+  PyObjectRef filename1(PyUnicode_FromString("file1.py"));
+  PyObjectRef name1(PyUnicode_FromString("do_stuff"));
   FuncLoc f1 = {
       .filename = filename1.get(),
       .name = name1.get(),
@@ -55,8 +49,8 @@ TEST(CallTraceSet, Intern) {
       .lineno = 4,
   };
 
-  PyObjectRef filename2(STRING_FROMSTRING("file2.py"));
-  PyObjectRef name2(STRING_FROMSTRING("sleep"));
+  PyObjectRef filename2(PyUnicode_FromString("file2.py"));
+  PyObjectRef name2(PyUnicode_FromString("sleep"));
   FuncLoc f2 = {
       .filename = filename2.get(),
       .name = name2.get(),
@@ -64,8 +58,8 @@ TEST(CallTraceSet, Intern) {
       .lineno = 8,
   };
 
-  PyObjectRef filename3(STRING_FROMSTRING("file2.py"));
-  PyObjectRef name3(STRING_FROMSTRING("main"));
+  PyObjectRef filename3(PyUnicode_FromString("file2.py"));
+  PyObjectRef name3(PyUnicode_FromString("main"));
   FuncLoc f3 = {
       .filename = filename3.get(),
       .name = name3.get(),

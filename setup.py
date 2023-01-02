@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import ctypes
 import fnmatch
 import glob
 import io
@@ -25,16 +24,6 @@ def globex(pattern, exclude=[]):
     ]
 
 
-define_macros = [("PY_SSIZE_T_CLEAN", None)]
-pythonapi = ctypes.cdll.LoadLibrary(None)
-if not hasattr(pythonapi, "PyMem_SetAllocator"):
-    print(
-        "WARNING: PyMem_SetAllocator: missing, %s has not been patched. "
-        % sys.executable
-    )
-    define_macros.append(("MPROFILE_PATCH_FORWARD", None))
-
-
 ext = Extension(
     "mprofile._profiler",
     language="c++",
@@ -42,7 +31,7 @@ ext = Extension(
     + ["third_party/google/tcmalloc/sampler.cc"],
     depends=glob.glob("src/*.h"),
     include_dirs=[os.getcwd(), "src"],
-    define_macros=define_macros,
+    define_macros=[("PY_SSIZE_T_CLEAN", None)],
     extra_compile_args=["-std=c++11"],
     extra_link_args=["-std=c++11", "-static-libstdc++"],
 )
@@ -76,13 +65,12 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
         "Operating System :: POSIX",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Testing",
         "Topic :: Software Development :: Libraries :: Python Modules",
