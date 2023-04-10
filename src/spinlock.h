@@ -4,6 +4,7 @@
 #define MPROFILE_SRC_SPINLOCK_H_
 
 #include <atomic>
+#include "platform.h"
 
 // SpinLock is a simple adapter to use an std::atomic<bool>
 // with a std::lock_guard.
@@ -27,7 +28,7 @@ class SpinLock {
       while (flag_.load(std::memory_order_relaxed)) {
         // Issue X86 PAUSE or ARM YIELD instruction to reduce contention
         // between hyper-threads.
-        __builtin_ia32_pause();
+        CPU_PAUSE;
       }
     }
   }
